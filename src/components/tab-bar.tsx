@@ -15,7 +15,7 @@ const TABS: Record<string, { label: string; icon: IconName }> = {
 };
 
 /** The floating bottom tab bar every screen shares. */
-export function TabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
+export function TabBar({ state, navigation }: BottomTabBarProps) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -38,8 +38,8 @@ export function TabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
             accessibilityLabel={tab.label}
             style={styles.item}
             onPress={() => {
-              const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-              if (!focused && !event.defaultPrevented) navigateToTab(route.key);
+              const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+              if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
             }}>
             <Icon name={tab.icon} color={color} />
             <Text style={[styles.label, { color, fontWeight: focused ? '700' : '500' }]}>{tab.label}</Text>
