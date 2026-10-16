@@ -48,7 +48,7 @@ export const Brand = {
   blue: '#224778',
   /** Icon navy: app icon and splash background. */
   navy: '#1B3A63',
-  /** Placeholder until Dan confirms the brand gold. */
+  /** Placeholder until Dan confirms the brand gold. After changing navy or gold, run scripts/make-icons.py. */
   gold: '#C5A15A',
   /** Secondary text on the blue now card. */
   heroSub: '#C5D2E6',
