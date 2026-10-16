@@ -44,3 +44,6 @@ example
 
 # Starter bundle (already unpacked)
 i5-install-starter.zip
+
+# Personal Claude Code settings
+.claude/settings.local.json
