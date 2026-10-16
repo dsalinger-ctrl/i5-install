@@ -1,0 +1,1386 @@
+<meta charset="utf-8">
+<title>I-5 Install App Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: presenter panel on the left, a live phone on the right; stacks on narrow screens. */
+:root{
+  --pg-bg:#E7EAF0; --pg-card:#FFFFFF; --pg-ink:#0B0F17; --pg-sub:#566070; --pg-line:#D5DAE3; --brand:#224778; --brand-soft:#E4EAF3;
+  --display:'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+  --body:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--pg-bg:#0C0F14;--pg-card:#161A21;--pg-ink:#F2F4F8;--pg-sub:#9AA3B2;--pg-line:#2A303B;--brand:#7FA3D8;--brand-soft:#1C2738;color-scheme:dark}}
+:root[data-theme="dark"]{--pg-bg:#0C0F14;--pg-card:#161A21;--pg-ink:#F2F4F8;--pg-sub:#9AA3B2;--pg-line:#2A303B;--brand:#7FA3D8;--brand-soft:#1C2738;color-scheme:dark}
+html,body{height:100%}
+body{background:var(--pg-bg);color:var(--pg-ink);font-family:var(--body);}
+*{box-sizing:border-box}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #5B8DEF;outline-offset:2px}
+
+.stage{min-height:100%;display:flex;align-items:center;justify-content:center;gap:48px;flex-wrap:wrap;padding-block:24px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.panel{width:360px;max-width:100%;display:flex;flex-direction:column;gap:18px}
+.brandmark{font-family:var(--display);font-weight:500;letter-spacing:.32em;font-size:12px;color:var(--pg-sub);display:flex;align-items:center;gap:10px}
+.brandmark b{font-weight:700;color:var(--pg-ink);letter-spacing:.06em;font-size:15px;border-right:1px solid var(--pg-line);padding-right:10px}
+.panel h1{font-family:var(--display);font-weight:700;font-size:34px;line-height:1.05;margin:0;text-wrap:balance}
+.panel .lede{font-size:15px;line-height:1.5;color:var(--pg-sub);margin:0}
+.ctrl{display:flex;flex-direction:column;gap:8px}
+.ctrl-label{font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:.16em;color:var(--pg-sub)}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--pg-line);border-radius:12px;padding:3px;gap:3px}
+.seg button{border:0;border-radius:9px;min-height:40px;background:transparent;color:var(--pg-sub);font-size:14px;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--pg-card);color:var(--pg-ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.phone .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink)}
+.phone .seg button{color:var(--sub)}
+.demo{background:var(--pg-card);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:12px;border:1px solid var(--pg-line)}
+.demo-top{display:flex;justify-content:space-between;align-items:center}
+.stepno{font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.12em;color:var(--brand)}
+.caption-title{font-family:var(--display);font-weight:700;font-size:19px;margin:0;text-wrap:balance}
+.caption{font-size:15px;line-height:1.5;color:var(--pg-sub);margin:0;min-height:68px}
+.dots{display:flex;gap:5px;flex-wrap:wrap}
+.dots span{width:18px;height:4px;border-radius:2px;background:var(--pg-line);transition:background .3s}
+.dots span.on{background:var(--brand)}
+.demo-btns{display:grid;grid-template-columns:auto 1fr auto;gap:8px}
+.btn{border:0;border-radius:12px;min-height:44px;padding:0 16px;font-size:15px;font-weight:600;background:var(--brand-soft);color:var(--brand)}
+.btn.primary{background:#224778;color:#fff}
+.foot{font-size:12px;line-height:1.5;color:var(--pg-sub);margin:0}
+
+/* Phone */
+.fit{width:calc(414px * var(--s,1));height:calc(868px * var(--s,1));flex-shrink:0}
+.device{width:414px;height:868px;border-radius:62px;background:#0A0A0A;padding:12px;transform:scale(var(--s,1));transform-origin:top left;box-shadow:0 30px 80px rgba(10,20,40,.28),inset 0 0 0 2px #2B2B2B}
+.phone{
+  --bg:#F3F3F3;--surface:#FFFFFF;--field:#EEEEEE;--line:#E6E6E6;--ink:#0B0B0B;--sub:#5F5F5F;--accent:#224778;--tint:#E4EAF3;--btn:#224778;
+  --amberBg:#FFF0DB;--amberInk:#9A4A00;--redBg:#FCEBEB;--redInk:#A32D2D;--okBg:#E2F2E6;--okInk:#1E6B37;
+  position:relative;width:390px;height:844px;border-radius:50px;overflow:hidden;overflow:clip;background:var(--bg);color:var(--ink);font-family:var(--body);transition:background .4s,color .4s;
+}
+.phone.dark{--bg:#000000;--surface:#1C1C1E;--field:#2C2C2E;--line:#2C2C2E;--ink:#FFFFFF;--sub:#A1A1A6;--accent:#7FA3D8;--tint:#1E2C42;--btn:#3E6CB3;
+  --amberBg:#3A2A12;--amberInk:#FFB340;--redBg:#3A1416;--redInk:#FF8A80;--okBg:#16301F;--okInk:#7DD69A}
+.screen{position:absolute;inset:0;padding:34px 16px 112px;overflow-y:auto;scrollbar-width:none;opacity:0;transform:translateX(28px);pointer-events:none;transition:opacity .32s ease,transform .32s ease;display:flex;flex-direction:column;gap:10px}
+.screen::-webkit-scrollbar{display:none}
+.screen.on{opacity:1;transform:none;pointer-events:auto}
+.hdr{padding:0 6px 6px;display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.eyebrow{font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.14em;color:var(--sub)}
+.h1{font-family:var(--display);font-size:28px;font-weight:700;letter-spacing:-.01em;margin:2px 0 0}
+.avatar{width:44px;height:44px;border-radius:22px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:15px;flex-shrink:0}
+.card{background:var(--surface);border-radius:20px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.hero{background:#224778;color:#fff;border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:14px;border:0;text-align:left;width:100%}
+.hero .eyebrow{color:#C5D2E6}
+.pill{font-size:12px;font-weight:700;padding:4px 9px;border-radius:10px;white-space:nowrap}
+.p-amber{background:var(--amberBg);color:var(--amberInk)} .p-red{background:var(--redInk);color:var(--redBg)} .p-ok{background:var(--okBg);color:var(--okInk)} .p-blue{background:var(--tint);color:var(--accent)}
+.big{font-family:var(--display);font-weight:700;font-size:38px;line-height:1}
+.bar{height:6px;border-radius:3px;background:#3A5D8C;overflow:hidden}
+.bar i{display:block;height:100%;background:#fff;border-radius:3px;transition:width .5s ease}
+.faces{display:flex}
+.faces span{width:32px;height:32px;border-radius:16px;border:2px solid #224778;margin-left:-9px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#224778;background:#D9E2EF}
+.faces span:first-child{margin-left:0;background:#fff}
+.alert{border-radius:18px;padding:12px 12px 12px 14px;display:flex;gap:12px;align-items:center;transition:background .4s}
+.alert.red{background:var(--redBg);color:var(--redInk)}
+.alert.ok{background:var(--okBg);color:var(--okInk)}
+.alert .act{min-height:40px;padding:0 14px;border:0;border-radius:12px;font-size:14px;font-weight:700;background:currentColor}
+.alert .act span{color:var(--redBg)}
+.spacer{flex:1;min-height:6px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--surface);border:0;border-radius:22px;min-height:120px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;align-items:stretch;text-align:left;color:var(--ink);transition:transform .15s}
+.tile:active{transform:scale(.97)}
+.tile .top{display:flex;justify-content:space-between;align-items:flex-start}
+.ico{width:44px;height:44px;border-radius:22px;background:var(--tint);display:flex;align-items:center;justify-content:center;color:var(--accent)}
+.tname{font-family:var(--display);font-size:17px;font-weight:700;display:block}
+.tsub{font-size:14px;color:var(--sub);display:block;margin-top:2px}
+.nav{position:absolute;left:14px;right:14px;bottom:18px;height:70px;background:var(--surface);border:1px solid var(--line);border-radius:35px;box-shadow:0 10px 30px rgba(0,0,0,.12);display:grid;grid-template-columns:repeat(5,1fr);align-items:center;padding:0 6px;z-index:5}
+.nav button{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--sub);font-size:11px;font-weight:500;min-height:56px;justify-content:center}
+.nav button.on{color:var(--accent);font-weight:700}
+.group-h{display:flex;justify-content:space-between;align-items:center;padding:4px 6px 0}
+.group-h b{font-family:var(--display);font-size:15px}
+.link{color:var(--accent);font-weight:600;font-size:15px;background:none;border:0;padding:0}
+.rows{background:var(--surface);border-radius:18px;overflow:hidden}
+.row{display:flex;gap:12px;align-items:center;padding:0 14px;min-height:52px;border-bottom:1px solid var(--line);font-size:16px}
+.row:last-child{border-bottom:0}
+.row input{width:22px;height:22px;accent-color:var(--btn);margin:0;flex-shrink:0}
+.row.done span.t{color:var(--sub);text-decoration:line-through}
+.row .who{margin-left:auto;font-size:13px;color:var(--sub)}
+.cta{border:0;border-radius:18px;min-height:56px;background:var(--btn);color:#fff;font-size:17px;font-weight:700;transition:background .3s}
+.cta.sent{background:var(--okBg);color:var(--okInk)}
+.soft{border:0;border-radius:16px;min-height:50px;background:var(--surface);color:var(--ink);font-size:15px;font-weight:600}
+.preview{background:var(--tint);border-radius:18px;padding:14px 16px;font-size:15px;line-height:1.5;white-space:pre-line}
+.field{font-family:inherit;font-size:16px;height:50px;border:0;border-radius:14px;padding:0 14px;background:var(--field);color:var(--ink);width:100%;min-width:0}
+.toast{position:absolute;left:24px;right:24px;bottom:104px;background:#111;color:#fff;border-radius:16px;padding:12px 14px;font-size:14px;line-height:1.4;display:flex;gap:10px;align-items:center;opacity:0;transform:translateY(12px);transition:all .3s;z-index:8;pointer-events:none}
+.phone.dark .toast{background:#F2F2F2;color:#111}
+.toast.show{opacity:1;transform:none}
+.notif{position:absolute;left:10px;right:10px;top:10px;background:rgba(250,250,250,.96);color:#111;border-radius:22px;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.18);transform:translateY(-140%);transition:transform .45s cubic-bezier(.2,.8,.2,1);z-index:9;border:0;text-align:left;width:auto}
+.phone.dark .notif{background:rgba(44,44,46,.97);color:#fff}
+.notif.show{transform:none}
+.notif .app{width:38px;height:38px;border-radius:10px;background:#224778;color:#fff;font-family:var(--display);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bubble{max-width:86%;border-radius:20px;padding:10px 14px;font-size:16px;line-height:1.4;animation:pop .3s ease}
+.bubble.me{align-self:flex-end;background:var(--btn);color:#fff;border-bottom-right-radius:6px}
+.bubble.bot{align-self:flex-start;background:var(--surface);border-bottom-left-radius:6px}
+.bubble.bot small{display:block;font-family:var(--display);font-weight:700;letter-spacing:.1em;font-size:11px;color:var(--accent);margin-bottom:4px}
+.typing{align-self:flex-start;background:var(--surface);border-radius:20px;padding:14px 16px;display:flex;gap:5px}
+.typing i{width:7px;height:7px;border-radius:4px;background:var(--sub);animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:0;border-radius:18px;min-height:38px;padding:0 14px;background:var(--surface);color:var(--ink);font-size:14px}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font-size:14px}
+.kv span{display:block;color:var(--sub)}
+.listrow{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 14px;border-bottom:1px solid var(--line);font-size:17px;background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:left;color:var(--ink)}
+.listrow:last-child{border-bottom:0}
+.listrow em{font-style:normal;margin-left:auto;font-size:15px;color:var(--sub)}
+.spot{position:relative;z-index:6;animation:spot 1.3s ease-in-out infinite}
+@keyframes spot{0%,100%{box-shadow:0 0 0 0 rgba(91,141,239,.0),0 0 0 3px rgba(91,141,239,.9)}50%{box-shadow:0 0 0 10px rgba(91,141,239,.18),0 0 0 3px rgba(91,141,239,.9)}}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+.flash{animation:flash .6s ease}
+@keyframes flash{0%{transform:scale(1)}40%{transform:scale(1.02)}100%{transform:scale(1)}}
+.punch{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:18px;padding:10px 10px 10px 14px;min-height:62px}
+.punch .dot{width:12px;height:12px;border-radius:6px;background:var(--sub);flex-shrink:0;opacity:.5}
+.punch .dot.live{background:#2EAD5B;opacity:1;animation:live 1.6s ease-in-out infinite}
+.punch .dot.lunch{background:var(--amberInk);opacity:1}
+@keyframes live{0%,100%{box-shadow:0 0 0 0 rgba(46,173,91,.45)}50%{box-shadow:0 0 0 6px rgba(46,173,91,0)}}
+.punch .txt{display:flex;flex-direction:column;flex:1;min-width:0}
+.punch .txt b{font-size:15px}.punch .txt span{font-size:13px;color:var(--sub)}
+.pbtn{border:0;border-radius:12px;min-height:42px;padding:0 14px;font-size:14px;font-weight:700;background:var(--btn);color:#fff;flex-shrink:0}
+.pbtn.ghost{background:var(--field);color:var(--ink)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:820px){.stage{gap:20px;align-content:flex-start}.panel{width:100%}}
+
+.calbtn{border:0;color:var(--accent)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .dow{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--sub);text-align:center;padding-bottom:2px}
+.cal .wk{grid-column:1/-1;font-size:12px;font-weight:600;color:var(--sub);padding:6px 2px 0}
+.cal button{border:0;background:var(--surface);border-radius:11px;min-height:46px;padding:6px 0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;font-size:15px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;transition:background .2s,color .2s}
+.cal button i{width:64%;height:5px;border-radius:3px;background:transparent}
+.cal button.past{opacity:.42}
+.cal button.today{box-shadow:inset 0 0 0 2px var(--accent)}
+.cal button.sel{background:var(--btn);color:#fff}
+.cal button.sel i{box-shadow:0 0 0 1.5px #fff}
+.k-job{background:var(--accent)!important}.k-travel{background:#E39B32!important}.k-shop{background:#9A9A9A!important}.k-off{background:#3FA463!important}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--sub);padding:0 4px}
+.legend span{display:flex;align-items:center;gap:5px}.legend i{width:10px;height:10px;border-radius:5px;display:inline-block}
+.blk{display:flex;gap:12px;align-items:center;min-height:58px;padding:8px 14px;border-bottom:1px solid var(--line)}
+.blk:last-child,.rows .listrow:last-child{border-bottom:0}
+.blk .bar{width:5px;align-self:stretch;border-radius:3px;flex-shrink:0;margin:0;height:auto}
+.blk b{font-size:16px}.blk small{display:block;font-size:13px;color:var(--sub)}
+.chk{display:flex;gap:12px;align-items:center;min-height:52px;padding:0 14px;border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:left;font-size:16px;color:var(--ink)}
+.chk:last-child{border-bottom:0}
+.chk .box{width:26px;height:26px;border-radius:13px;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:transparent;transition:all .2s}
+.chk.on .box{background:var(--okBg);border-color:var(--okInk);color:var(--okInk)}
+.chk em{margin-left:auto;font-style:normal;font-size:13px;font-weight:700;color:var(--sub)}
+.chk.on em{color:var(--okInk)}
+.sign{border:2px dashed var(--line);border-radius:16px;min-height:76px;background:none;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--sub);font-size:15px;font-weight:600}
+.sign.on{border-style:solid;border-color:var(--okInk);color:var(--ink)}
+.sign .sig{font-family:'Snell Roundhand','Segoe Script','Brush Script MT',cursive;font-size:30px;font-weight:400;color:var(--ink);line-height:1}
+.frow{display:flex;gap:12px;align-items:center;min-height:56px;padding:6px 14px;border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:left;color:var(--ink)}
+.frow:last-child{border-bottom:0}
+.frow b{font-size:16px}.frow small{display:block;font-size:13px;color:var(--sub)}
+.frow .pill{margin-left:auto}
+.upbar{height:6px;border-radius:3px;background:var(--field);overflow:hidden}.upbar i{display:block;height:100%;width:0;background:var(--okInk);transition:width 1s ease}
+.fsec .fq{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);font-size:15px}
+.fsec .fq.col{flex-direction:column;align-items:stretch;gap:6px}
+.fsec .fq small{font-size:13px;color:var(--sub);font-weight:600}
+.fsec>*:last-child{border-bottom:0}
+.fsec textarea.field{height:auto;min-height:64px;padding:10px 14px;resize:none;font-family:inherit}
+.fsec .mic{font-size:12px;color:var(--sub)}
+.yn{display:flex;gap:4px;flex-shrink:0}
+.yn button,.chipset button{border:0;border-radius:10px;min-height:38px;min-width:52px;padding:0 12px;background:var(--field);color:var(--ink);font-size:14px;font-weight:700;transition:background .2s}
+.yn button.on,.chipset button.on{background:var(--okBg);color:var(--okInk)}
+.yn button.on.no,.chipset button.on.no{background:var(--redBg);color:var(--redInk)}
+.chipset{display:flex;flex-wrap:wrap;gap:6px}
+.chipset button:not(.on){color:var(--sub)}
+.api{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--sub);text-align:center;word-break:break-all}
+.aicard{background:var(--tint);gap:8px}
+.aitag{font-size:11px;font-weight:700;color:var(--accent);background:var(--surface);padding:2px 7px;border-radius:8px;margin-left:4px;letter-spacing:0}
+.aitag.ed{color:var(--amberInk);background:var(--amberBg)}
+.shim{display:block;height:12px;border-radius:6px;background:linear-gradient(90deg,var(--surface) 0%,var(--field) 50%,var(--surface) 100%);background-size:200% 100%;animation:shim 1.1s linear infinite}
+@keyframes shim{from{background-position:200% 0}to{background-position:-200% 0}}
+.plantile{background:var(--btn)!important;color:#fff!important}
+.plantile .ico{background:rgba(255,255,255,.18)!important;color:#fff!important}
+.plantile .tsub{color:#D9E2EF!important}
+.pickrow{border:0;border-top:1px solid #3A5D8C;padding:12px 0 0;background:none;color:#fff;display:flex;justify-content:space-between;align-items:center;width:100%;font:inherit}
+.pickchg{border:0;border-radius:12px;min-height:34px;padding:0 12px;background:rgba(255,255,255,.16);color:#fff;font-size:13px;font-weight:700;font-family:inherit}
+.sheetbg{position:absolute;inset:0;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s;z-index:8}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:78%;background:var(--bg);border-radius:28px 28px 0 0;padding:10px 16px 28px;display:flex;flex-direction:column;gap:8px;transform:translateY(105%);transition:transform .32s cubic-bezier(.2,.8,.2,1);z-index:9}
+.sheet.show{transform:none}.sheetbg.show{opacity:1;pointer-events:auto}
+.sheet .grab{width:40px;height:5px;border-radius:3px;background:var(--line);align-self:center;margin-bottom:6px}
+.trow{display:flex;gap:12px;align-items:center;min-height:56px;padding:6px 14px;border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:left;color:var(--ink);font-size:16px}
+.trow:last-child{border-bottom:0}.trow b{font-family:var(--display);min-width:30px}.trow small{display:block;font-size:13px;color:var(--sub)}
+.trow.cur{background:var(--tint)}.trow[disabled]{opacity:.5}
+.trow .pill{margin-left:auto}
+.nowtag{font-size:11px;font-weight:700;color:var(--accent);background:var(--tint);padding:2px 7px;border-radius:8px;margin-left:6px}
+.flybox{background:var(--field);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;font-size:15px;font-weight:600}
+.flybox small{display:block;font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--sub)}
+.phase{border:0;border-radius:16px;min-height:48px;padding:0 14px;display:flex;align-items:center;gap:10px;background:var(--surface);color:var(--ink);font-size:15px;width:100%;text-align:left}
+.phase b{font-family:var(--display)}.phase .sub{color:var(--sub);font-size:14px}.phase .go{margin-left:auto;color:var(--sub);font-size:20px}
+.phase.mob{background:var(--amberBg);color:var(--amberInk)}.phase.mob .sub,.phase.mob .go{color:var(--amberInk)}
+.phase.eodp{background:var(--tint);color:var(--accent)}.phase.eodp .sub,.phase.eodp .go{color:var(--accent)}
+.phase .ring{width:26px;height:26px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;background:rgba(0,0,0,.06)}
+.cirow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line)}
+.cirow:last-child{border-bottom:0}.cirow b{font-family:var(--display)}.cirow small{display:block;font-size:13px;color:var(--sub)}
+.who-tag{font-size:11px;font-weight:700;color:var(--sub);background:var(--field);padding:2px 7px;border-radius:8px;margin-left:6px}
+.stat{margin-left:auto;font-size:12px;font-weight:700;padding:4px 9px;border-radius:10px;white-space:nowrap}
+.screen > *{flex-shrink:0}
+#rtBody > *{flex-shrink:0}
+#punchLead,#punchCrew,#phaseLead,#phaseCrew{display:none!important}
+.hero .st{display:none;flex-direction:column;gap:6px}
+.hero[data-st="clock"] .st-clock,.hero[data-st="mob"] .st-mob,.hero[data-st="work"] .st-work,.hero[data-st="eod"] .st-eod{display:flex}
+.nowlab{font-size:14px;font-weight:600;color:#C5D2E6;display:flex;justify-content:space-between;align-items:center;min-height:34px}
+.nowbig{font-family:var(--display);font-size:32px;font-weight:700;line-height:1.1}
+.nowmid{font-size:19px;font-weight:500}
+.nowsub{font-size:14px;color:#C5D2E6}
+.nowbtn{min-height:56px;border:0;border-radius:16px;background:#fff;color:#224778;font-size:17px;font-weight:700;margin-top:8px;width:100%;font-family:inherit}
+.nowbtn.ghost{background:transparent;border:1px solid #5A7BAA;color:#fff;font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.clk{border:0;background:none;padding:6px 0 0;display:flex;align-items:center;gap:7px;font-size:14px;color:var(--sub);font-weight:600;font-family:inherit}
+.clk i{width:9px;height:9px;border-radius:5px;background:var(--line);display:inline-block}
+.clk.on i{background:#2FA35A;box-shadow:0 0 0 0 rgba(47,163,90,.5);animation:clkp 2s infinite}
+@keyframes clkp{70%{box-shadow:0 0 0 7px rgba(47,163,90,0)}100%{box-shadow:0 0 0 0 rgba(47,163,90,0)}}
+.fl{display:flex;gap:12px;align-items:center;padding:12px 14px;border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:left;color:var(--ink)}
+.fl:last-child{border-bottom:0}.fl.on{background:var(--tint)}
+.fl .tm{font-family:var(--display);font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+.fl small{display:block;font-size:12px;color:var(--sub);margin-top:2px}
+.fl .pr{margin-left:auto;text-align:right;font-family:var(--display);font-weight:700;font-size:17px}
+.fl .pr small{font-family:var(--body);font-weight:600}
+.legtab{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.legtab button{border:0;border-radius:12px;min-height:50px;background:var(--surface);color:var(--sub);font-size:13px;font-weight:700;text-align:left;padding:6px 12px;font-family:inherit}
+.legtab button b{display:block;color:var(--ink);font-size:14px}
+.legtab button.on{background:var(--btn);color:#D9E2EF}.legtab button.on b{color:#fff}
+.springboard{position:absolute;inset:0;z-index:30;background:linear-gradient(165deg,#22344f 0%,#0f1c2e 55%,#1d2b40 100%);display:flex;flex-direction:column;padding:16px 22px 22px;transition:opacity .35s ease, transform .45s cubic-bezier(.2,.8,.2,1)}
+.springboard.gone{opacity:0;transform:scale(1.08);pointer-events:none}
+.sbstatus{display:flex;justify-content:space-between;align-items:center;color:#fff;font-weight:600;font-size:16px;padding:6px 14px 0}
+.sbgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px 14px;margin-top:44px}
+.sbapp{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:0;color:#fff}
+.sbt{width:62px;height:62px;border-radius:15px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.sbt.i5t{background:#1B3A63;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.sbsvg{width:62px;height:62px;display:block}
+.sbl{font-size:12px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+#i5Icon{cursor:pointer} #i5Icon:active .sbt{transform:scale(.92)}
+#i5Icon .sbt{transition:transform .15s}
+.springboard.pulse #i5Icon .sbt{animation:i5pulse 1.6s ease-in-out infinite}
+@keyframes i5pulse{0%,100%{box-shadow:0 0 0 0 rgba(197,161,90,.0),0 6px 18px rgba(0,0,0,.35)}50%{box-shadow:0 0 0 7px rgba(197,161,90,.45),0 6px 18px rgba(0,0,0,.35)}}
+.sbhint{margin-top:auto;align-self:center;font-size:14px;font-weight:600;color:#fff;background:rgba(255,255,255,.14);padding:8px 14px;border-radius:16px;margin-bottom:16px}
+.sbdock{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;background:rgba(255,255,255,.14);border-radius:30px;padding:14px 16px;justify-items:center}
+.splash{position:absolute;inset:0;z-index:29;background:#1B3A63;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;opacity:0;pointer-events:none;transition:opacity .35s ease}
+.splash.on{opacity:1}
+.splsvg{width:132px;height:132px;border-radius:30px;display:block;transform:scale(.6);transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.splash.on .splsvg{transform:scale(1)}
+.splname{font-family:var(--display);color:#fff;font-size:24px;font-weight:700;letter-spacing:.02em}
+.spltag{font-family:var(--display);color:#C5A15A;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase}
+.zrow{display:flex;flex-wrap:wrap;gap:6px}
+.zbtn{border:0;border-radius:12px;min-height:38px;padding:0 12px;background:rgba(255,255,255,.16);color:#fff;font-size:13px;font-weight:700;font-family:inherit}
+.zbtn.on{background:#fff;color:#224778}
+</style>
+
+<div class="stage">
+  <section class="panel" aria-label="Presenter controls">
+    <div class="brandmark"><b>I-5</b>DESIGN BUILD</div>
+    <h1>Install App</h1>
+    <p class="lede">A working prototype of the field app for installers and leads. Tap around the phone, or play the walkthrough.</p>
+
+    <div class="ctrl">
+      <span class="ctrl-label">VIEW AS</span>
+      <div class="seg" role="group" aria-label="View as">
+        <button id="asLead" aria-pressed="true">Mike · lead</button>
+        <button id="asCrew" aria-pressed="false">Raul · crew</button>
+      </div>
+    </div>
+    <div class="ctrl">
+      <span class="ctrl-label">PHONE APPEARANCE</span>
+      <div class="seg" role="group" aria-label="Phone appearance">
+        <button id="mLight" aria-pressed="true">Light</button>
+        <button id="mDark" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+
+    <div class="demo" aria-live="polite">
+      <div class="demo-top"><span class="stepno" id="stepNo">WALKTHROUGH · 21 STEPS</span><button class="link" id="resetBtn">Reset</button></div>
+      <h2 class="caption-title" id="capTitle">A day at Table Mountain</h2>
+      <p class="caption" id="cap">Play the walkthrough to see a lead and a crew member use the app through one day, from the morning lift plan to tomorrow's start time.</p>
+      <div class="dots" id="dots"></div>
+      <div class="demo-btns">
+        <button class="btn" id="backBtn" aria-label="Previous step">Back</button>
+        <button class="btn primary" id="playBtn">Play walkthrough</button>
+        <button class="btn" id="nextBtn" aria-label="Next step">Next</button>
+      </div>
+    </div>
+    <p class="foot">The crew, site, drawing numbers, Mike's update wording, his lift-plan note and shipment #16 come from I-5's calendar and Zoom chats. Task names, the house, the vehicle, the schedule after Oct 11, most AI answers, the Paychex Flex sync and the filled-in answers are sample data. The 10 safety forms and their questions are I-5's real Procore templates.</p>
+  </section>
+
+  <div class="fit" id="fit">
+    <div class="device">
+      <div class="phone" id="phone">
+        <div class="springboard" id="springboard">
+          <div class="sbstatus"><span>7:02</span><span style="display:flex;gap:6px;align-items:center"><svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" fill="#fff"/><rect x="5" y="5" width="3" height="7" rx="1" fill="#fff"/><rect x="10" y="2" width="3" height="10" rx="1" fill="#fff"/><rect x="15" y="0" width="3" height="12" rx="1" fill="#fff" opacity=".4"/></svg><svg width="26" height="12" viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3" fill="none" stroke="#fff" opacity=".6"/><rect x="2" y="2" width="16" height="8" rx="2" fill="#fff"/><rect x="23.5" y="4" width="2" height="4" rx="1" fill="#fff" opacity=".6"/></svg></span></div>
+          <div class="sbgrid"><div class="sbapp"><span class="sbt"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h3l2 5-2 1a11 11 0 0 0 5 5l1-2 5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 6 6a2 2 0 0 1 2-2z"/></svg></span><span class="sbl">Phone</span></div><div class="sbapp"><span class="sbt"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span><span class="sbl">Messages</span></div><div class="sbapp"><span class="sbt"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h4l2-2h4l2 2h4v10H4z"/></svg></span><span class="sbl">Camera</span></div><div class="sbapp"><span class="sbt"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v12H4zM7 15l4-4 3 3 2-2 3 3"/></svg></span><span class="sbl">Photos</span></div><div class="sbapp"><span class="sbt"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v13H4zM4 10h16M8 4v4M16 4v4"/></svg></span><span class="sbl">Calendar</span></div><div class="sbapp"><span class="sbt"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 8v4l3 2"/></svg></span><span class="sbl">Clock</span></div><div class="sbapp"><span class="sbt"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l5-2 6 2 5-2v14l-5 2-6-2-5 2z"/></svg></span><span class="sbl">Maps</span></div><button class="sbapp" id="i5Icon" aria-label="Open I-5 Install"><span class="sbt i5t"><svg class="sbsvg" viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" fill="#1B3A63"/><rect x="28" y="28" width="64" height="64" fill="none" stroke="#C5A15A" stroke-width="3.2"/><rect x="38" y="38" width="44" height="44" fill="none" stroke="#FFFFFF" stroke-width="1.5" opacity=".55"/><text x="60" y="67" text-anchor="middle" font-family="Montserrat,sans-serif" font-weight="600" font-size="17" fill="#FFFFFF" letter-spacing="1">I-5</text></svg></span><span class="sbl">I-5 Install</span></button><div class="sbapp"><span class="sbt"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17h10a4 4 0 0 0 0-8 6 6 0 0 0-11 2 3 3 0 0 0 1 6z"/></svg></span><span class="sbl">Weather</span></div><div class="sbapp"><span class="sbt"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4"/></svg></span><span class="sbl">Notes</span></div><div class="sbapp"><span class="sbt"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v12H4zM4 7l8 6 8-6"/></svg></span><span class="sbl">Mail</span></div><div class="sbapp"><span class="sbt"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h6l2 2h8v10H4z"/></svg></span><span class="sbl">Files</span></div></div>
+          <div class="sbhint" id="sbHint">Tap I-5 Install</div>
+          <div class="sbdock"><div class="sbapp"><span class="sbt"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h3l2 5-2 1a11 11 0 0 0 5 5l1-2 5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 6 6a2 2 0 0 1 2-2z"/></svg></span></div><div class="sbapp"><span class="sbt"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span></div><div class="sbapp"><span class="sbt"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v12H4zM4 7l8 6 8-6"/></svg></span></div><div class="sbapp"><span class="sbt"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h4l2-2h4l2 2h4v10H4z"/></svg></span></div></div>
+        </div>
+        <div class="splash" id="splash"><svg class="splsvg" viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" fill="#1B3A63"/><rect x="28" y="28" width="64" height="64" fill="none" stroke="#C5A15A" stroke-width="3.2"/><rect x="38" y="38" width="44" height="44" fill="none" stroke="#FFFFFF" stroke-width="1.5" opacity=".55"/><text x="60" y="67" text-anchor="middle" font-family="Montserrat,sans-serif" font-weight="600" font-size="17" fill="#FFFFFF" letter-spacing="1">I-5</text></svg><span class="splname">I-5 Install</span><span class="spltag">Custom decor · installed right</span></div>
+
+
+        <button class="notif" id="notif" aria-label="Notification"><span class="app">I-5</span><span style="display:flex;flex-direction:column;gap:1px"><b id="nTitle" style="font-size:15px">2-hr update due at 12:00</b><span id="nBody" style="font-size:14px;opacity:.8">TM · Tap to post to Todd</span></span></button>
+
+        <!-- HOME · LEAD -->
+        <section class="screen on" id="s-homeLead" aria-label="Home, lead">
+          <div class="hdr"><div><div class="eyebrow">FRIDAY, OCT 9</div><div class="h1">Morning, Mike</div><button class="clk" data-clk="1" id="clkLead"></button></div><div class="avatar">MW</div></div>
+          <div class="punch" id="punchLead"></div>
+          <button class="phase" id="phaseLead"></button>
+          <div class="hero now" id="heroLead" data-st="clock">
+            <span style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow">TODAY · TABLE MOUNTAIN · 5302-1</span><span class="pill" style="background:#fff;color:#224778">Lead</span></span>
+            <div class="st st-clock"><span class="nowlab">First thing</span><span class="nowbig">Start your day</span><span class="nowsub">You're at Table Mountain · day 2 of 3</span><button class="nowbtn" data-punch="in">Clock in</button></div>
+            <div class="st st-mob"><span class="nowlab"><span>Mobilize · <span class="mobN">0 of 5</span> done</span></span><span class="nowbig mobNext">Drawing review</span><span class="nowsub">Your start-of-day list</span><button class="nowbtn" data-go="routine">Open my list</button></div>
+            <div class="st st-work"><span class="nowlab">Working on</span><span class="nowbig" id="leadD">D4</span><span class="nowmid" id="leadT">Set middle frame</span><span class="nowsub ciNext">Next check-in 12:00 PM</span><span class="two"><button class="nowbtn" data-go="checkin" id="ciLead">Check in</button><button class="nowbtn ghost" id="pickLead">Change task</button></span></div>
+            <div class="st st-eod"><span class="nowlab"><span>Wrap up · <span class="eodN"></span> done</span></span><span class="nowbig eodNext" style="font-size:24px"></span><span class="nowsub">Then send and clock out</span><button class="nowbtn" data-go="eod">Wrap up my day</button></div>
+            <span style="display:none"><span id="leadCount"></span><i id="leadBar"></i><span id="leadNext"></span></span>
+          </div>
+          <div class="alert red" id="liftAlert">
+            <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0" id="liftIco"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+            <span style="display:flex;flex-direction:column;flex:1"><b style="font-size:15px" id="liftT">Lift plan needed</b><span style="font-size:14px" id="liftS">Before lifting the D4 middle frame</span></span>
+            <button class="act" id="liftBtn"><span>Fill out</span></button>
+          </div>
+          <div class="spacer"></div>
+          <div class="tiles">
+            <button class="tile" data-go="update" id="tUpdate"><span class="top"><span class="ico"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span class="pill p-amber" id="updBadge">12:00</span></span><span><span class="tname">2-hr update</span><span class="tsub" id="updSub">Post to Todd</span></span></button>
+            <button class="tile plantile" data-go="plan" id="tPlan" style="display:none"><span class="top"><span class="ico"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/></svg></span><span class="pill" id="planBadge" style="background:#fff;color:#224778">10 hrs</span></span><span><span class="tname">Easy plan tomorrow</span><span class="tsub" id="planSub">Start time + tasks</span></span></button>
+            <button class="tile zoomTile" id="tZoomLead"><span class="top"><span class="ico"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3z"/></svg></span></span><span><span class="tname">Zoom call</span><span class="tsub zoomSub">Todd and Dan</span></span></button>
+            <button class="tile" data-go="sched" id="tSched"><span class="top"><span class="ico"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span><span class="pill p-blue">Off Thu</span></span><span><span class="tname">Schedule</span><span class="tsub">Next 4 weeks</span></span></button>
+            <button class="tile" id="tSafety" data-go="safety"><span class="top"><span class="ico"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span><span class="pill p-red" id="safBadge">Now</span></span><span><span class="tname">Safety</span><span class="tsub" id="safSub">Lift plan</span></span></button>
+          </div>
+        </section>
+
+        <!-- HOME · CREW -->
+        <section class="screen" id="s-homeCrew" aria-label="Home, crew member">
+          <div class="hdr"><div><div class="eyebrow">FRIDAY, OCT 9</div><div class="h1">Morning, Raul</div><button class="clk" data-clk="1" id="clkCrew"></button></div><div class="avatar">RD</div></div>
+          <div class="punch" id="punchCrew"></div>
+          <button class="phase" id="phaseCrew"></button>
+          <div class="hero now" id="crewHero" data-st="clock">
+            <span style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow">TODAY · TM · LEAD: MIKE</span><span style="font-size:13px;color:#C5D2E6">Crew of 6</span></span>
+            <div class="st st-clock"><span class="nowlab">First thing</span><span class="nowbig">Start your day</span><span class="nowsub">You're at Table Mountain</span><button class="nowbtn" data-punch="in">Clock in</button></div>
+            <div class="st st-mob"><span class="nowlab"><span>Mobilize · <span class="mobN">0 of 5</span> done</span></span><span class="nowbig mobNext">Drawing review</span><span class="nowsub">Your start-of-day list</span><button class="nowbtn" data-go="routine">Open my list</button></div>
+            <div class="st st-work"><span class="nowlab">Working on<button class="pickchg" id="pickCrew">Change</button></span><span class="nowbig" id="crewD">D4</span><span class="nowmid" id="crewT">Add screws per structural</span><span class="nowsub ciNext">Next check-in 12:00 PM</span><span id="crewAfter" style="display:none"></span><span class="two"><button class="nowbtn" id="markDone" data-go="checkin">Check in</button><button class="nowbtn ghost" data-go="tasks" id="crewAll"><span id="crewLeft">All tasks</span></button></span></div>
+            <div class="st st-eod"><span class="nowlab"><span>Wrap up · <span class="eodN"></span> done</span></span><span class="nowbig eodNext" style="font-size:24px"></span><span class="nowsub">Then send and clock out</span><button class="nowbtn" data-go="eod">Wrap up my day</button></div>
+          </div>
+          <div class="spacer"></div>
+          <div class="tiles">
+            <button class="tile" data-go="sched" id="tSchedCrew"><span class="top"><span class="ico"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span><span class="pill p-blue">Off Thu</span></span><span><span class="tname">My schedule</span><span class="tsub">Next 4 weeks</span></span></button>
+            <button class="tile zoomTile" id="tZoomCrew"><span class="top"><span class="ico"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3z"/></svg></span></span><span><span class="tname">Zoom call</span><span class="tsub zoomSub">Todd and Dan</span></span></button>
+            <button class="tile" id="tFlag" data-toast="Photo + drawing # posts to Production Engineers and adds a Trello item"><span class="top"><span class="ico"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span></span><span><span class="tname">Flag issue</span><span class="tsub">Photo + drawing</span></span></button>
+            <button class="tile" data-go="safety" id="tSafetyCrew"><span class="top"><span class="ico"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span></span><span><span class="tname">Safety</span><span class="tsub" id="safSubCrew">Daily check</span></span></button>
+          </div>
+        </section>
+
+        <!-- EVENING · CREW -->
+        <section class="screen" id="s-evening" aria-label="Home after end of day">
+          <div class="hdr"><div><div class="eyebrow">FRIDAY, OCT 9 · 8:20 PM</div><div class="h1">Nice work, Raul</div></div><div class="avatar">RD</div></div>
+          <div class="hero">
+            <span style="display:flex;justify-content:space-between;align-items:flex-start"><span><span class="eyebrow">TOMORROW · SAT, OCT 10</span><span class="big" style="display:block;font-size:46px;margin-top:6px">10:00 AM</span><span style="font-size:15px;color:#D9E2EF;display:block;margin-top:4px">TM · Meet at the pass-through window</span></span><span style="font-size:12px;color:#C5D2E6;text-align:right">From Mike<br>7:58 PM</span></span>
+            <span style="border-top:1px solid #3A5D8C;padding-top:12px;display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;color:#C5D2E6">Your work, in order</span><span style="font-size:16px"><b>1 · D2</b> · Assemble next sections with Shaun</span><span style="font-size:16px;color:#D9E2EF">Then D1 upper valance</span></span>
+            <span style="background:#2E558A;border-radius:14px;padding:10px 14px;font-size:15px">Lift plan review before we lift anything.</span>
+            <button id="gotIt" style="min-height:50px;border:0;border-radius:14px;background:#fff;color:#224778;font-size:16px;font-weight:700">Got it</button>
+          </div>
+          <div class="card" style="flex-direction:row;justify-content:space-between;align-items:center"><span><b style="font-family:var(--display)">Today</b><span style="display:block;font-size:14px;color:var(--sub)" id="eveSum">TM · 10 hrs · 3 tasks</span></span><span class="pill p-ok">Report sent</span></div>
+          <button class="card" data-go="travel" style="border:0;text-align:left;color:var(--ink);flex-direction:row;justify-content:space-between;align-items:center"><span><b style="font-family:var(--display)">Tonight</b><span style="display:block;font-size:14px;color:var(--sub)">TM House 1 · door code and Wi-Fi</span></span><span aria-hidden="true" style="font-size:22px;color:var(--sub)">›</span></button>
+          <button class="card" data-go="sched" style="border:0;text-align:left;color:var(--ink);flex-direction:row;justify-content:space-between;align-items:center"><span><b style="font-family:var(--display)">Next week</b><span style="display:block;font-size:14px;color:var(--sub)">Fly home Sun · Shop Mon–Wed · Off Thu–Fri</span></span><span aria-hidden="true" style="font-size:22px;color:var(--sub)">›</span></button>
+        </section>
+
+        <!-- TASKS -->
+        <section class="screen" id="s-tasks" aria-label="Tasks">
+          <div class="hdr"><div><div class="eyebrow">TM · FROM TRELLO</div><div class="h1">Tasks</div></div><span style="font-size:14px;color:var(--sub);padding-bottom:6px" id="taskCount">2 of 9 done</span></div>
+          <div class="seg" style="background:var(--field)"><button aria-pressed="true" style="color:var(--ink)">Whole crew</button><button aria-pressed="false" style="color:var(--sub)" data-toast="Shows only cards you're a member of">Just mine</button></div>
+          <div class="card" style="flex-direction:row;gap:10px;align-items:center;padding:12px 14px"><span style="width:8px;height:8px;border-radius:4px;background:var(--accent);flex-shrink:0"></span><span style="font-size:14px;color:var(--sub)">Stay on the work. Cards move in Trello at each 2-hour check-in.</span></div>
+          <div id="taskList" style="display:flex;flex-direction:column;gap:12px"></div>
+          <button class="soft" style="background:var(--tint);color:var(--accent)" data-toast="Adds a punch item to this drawing's Trello card">+ Add punch item</button>
+        </section>
+
+        <!-- 2-HR UPDATE -->
+        <section class="screen" id="s-update" aria-label="Two-hour update">
+          <div class="hdr"><div><div class="eyebrow">TM · DUE 12:00 PM</div><div class="h1">2-hr update</div></div></div>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-family:var(--display)">Since 10:00 AM</b><span style="font-size:13px;color:var(--sub)" id="ciCount">From crew check-ins · 5 of 6 in</span></div>
+            <div id="updItems" style="display:flex;flex-direction:column;gap:10px;font-size:16px"></div>
+            <input class="field" id="updExtra" aria-label="Anything else" placeholder="Anything else? Restacking D4 sections on the trailer">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="soft" data-toast="Adds a photo to this update">Add photo</button><button class="soft" data-toast="Photo + drawing # goes to Production Engineers">Flag issue</button></div>
+          <span class="eyebrow" style="padding:4px 6px 0">POSTS TO ZOOM · PRODUCTION ENGINEERS</span>
+          <div class="preview" id="updPreview"></div>
+          <button class="cta" id="sendUpd">Send update</button>
+          <span style="font-size:14px;color:var(--sub);text-align:center" id="updNext">Next one due 2:00 PM</span>
+        </section>
+
+        <!-- TRAVEL -->
+        <section class="screen" id="s-travel" aria-label="My travel">
+          <div class="hdr"><div><div class="eyebrow" id="trvWho">TM TRIP · TRAVEL DAY, WED OCT 7</div><div class="h1">My travel</div></div></div>
+          <div class="card" id="bookCard" style="gap:10px"></div>
+          <span class="eyebrow" style="padding:6px 6px 0">THIS TRIP · TABLE MOUNTAIN</span>
+          <div class="hero" id="flightCard" style="gap:10px">
+            <span style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow">FLIGHT</span><span class="pill p-amber" style="background:#FFF0DB;color:#9A4A00">Today</span></span>
+            <span><span style="font-size:14px;color:#C5D2E6">Leaves in</span><span class="big" style="display:block;font-size:36px;margin-top:2px;font-variant-numeric:tabular-nums" id="countdown">5 hr 20 min</span></span>
+            <span class="kv" style="color:#fff;grid-template-columns:repeat(3,1fr)"><span style="color:#fff"><span style="color:#C5D2E6">Flight</span>[AS 0000]</span><span style="color:#fff"><span style="color:#C5D2E6">Departs</span>2:40 PM</span><span style="color:#fff"><span style="color:#C5D2E6">Route</span>[PDX → FAT]</span></span>
+            <span style="background:#2E558A;border-radius:14px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:15px"><span>Leave for the airport by <b>12:10 PM</b></span><span style="font-size:13px;color:#C5D2E6">45 min drive</span></span>
+            <span style="font-size:13px;color:#C5D2E6" id="flyWith">Booked in Egencia · Flying with Shaun, Michael, Raul, Brogan</span>
+            <span class="zrow" id="zRow"></span>
+          </div>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow">YOUR HOUSE</span><span class="pill p-ok">Reserved for you</span></div>
+            <b style="font-family:var(--display);font-size:17px">TM House 1 · [address]</b>
+            <div class="kv"><div><span>Check in</span>Wed · 3:00 PM</div><div><span>Your room</span>[Bedroom #]</div><div><span>Housemates</span><b style="font-weight:400" id="mates">Shaun, Raul</b></div><div><span>To site</span>6 min</div></div>
+            <div style="display:flex;gap:16px;padding-top:2px"><button class="link" data-toast="Shows only to people booked in this house">Door code and Wi-Fi</button><button class="link" data-toast="Sends the issue to April">Report an issue</button></div>
+          </div>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow">YOUR VEHICLE</span><span style="font-size:12px;color:var(--sub)">Set by April</span></div>
+            <div class="seg" style="background:var(--field)" id="vehSeg"><button aria-pressed="false" data-veh="truck">I-5 truck</button><button aria-pressed="true" data-veh="rental">Rental</button></div>
+            <div id="vehBody" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+        </section>
+
+        <!-- ASK AI -->
+        <section class="screen" id="s-ask" aria-label="Ask AI" style="padding-bottom:176px">
+          <div class="hdr"><div><div class="eyebrow">I-5 DECOR GROK BOT</div><div class="h1">Ask AI</div></div></div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:0 6px"><span style="font-size:13px;color:var(--sub)">About</span><span class="pill p-blue">TM</span><span class="pill p-blue">5302-1</span><span class="pill p-blue" id="askDraw">D4</span><span class="pill p-blue">Shipping</span></div>
+          <div id="chat" style="display:flex;flex-direction:column;gap:10px;padding-top:4px">
+            <div class="bubble bot"><small>GROK · I-5 DECOR</small>Ask me about drawings, packing lists, shipments or fixes. If I'm not sure, I'll send it to Todd and Dan.</div>
+          </div>
+          <div class="chips" id="chips">
+            <button class="chip" data-q="When is shipment 16?">When is shipment 16?</button>
+            <button class="chip" data-q="Which crate is D4 in?" id="chipCrate">Which crate is D4 in?</button>
+            <button class="chip" data-q="Fastener spec for D4" id="chipFast">Fastener spec for D4</button>
+          </div>
+        </section>
+        <div id="askBar" style="position:absolute;left:16px;right:16px;bottom:100px;display:none;gap:8px;align-items:center;z-index:4">
+          <button aria-label="Add photo" class="avatar" style="border:0;color:var(--sub)"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+          <input class="field" id="askInput" aria-label="Question" placeholder="Ask anything about this job" style="border-radius:23px;height:46px;background:var(--surface)">
+          <button aria-label="Send question" id="askSend" class="avatar" style="border:0;background:var(--btn);color:#fff"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+
+        <!-- MORE -->
+        <section class="screen" id="s-more" aria-label="More">
+          <div class="hdr"><div class="h1" style="font-size:30px">More</div></div>
+          <span class="eyebrow" style="padding:6px 6px 0">ON SITE</span>
+          <div class="rows"><button class="listrow" data-toast="Packing list from the 5302-1 project sheet">Packing list<em>[18 of 24]</em></button><button class="listrow" data-toast="From the Shipping calendar">Shipments<em>#16 Mon</em></button><button class="listrow" data-go="eod">End of day<em>›</em></button></div>
+          <span class="eyebrow" style="padding:6px 6px 0">TEAM</span>
+          <div class="rows"><button class="listrow" data-go="crew">Crew board<em>›</em></button><button class="listrow" data-go="plan" id="planRow">Plan tomorrow<em><span class="pill p-blue">Leads</span></em></button></div>
+          <span class="eyebrow" style="padding:6px 6px 0">ME</span>
+          <div class="rows"><button class="listrow" data-go="routine">My day<em>›</em></button><button class="listrow" data-go="sched">My schedule<em>›</em></button><button class="listrow" data-toast="Request goes to the Install Shop and Time Off calendar for approval">Request time off<em>›</em></button><button class="listrow" id="appearRow">Appearance<em id="appearVal">Light</em></button></div>
+        </section>
+
+        <!-- CREW BOARD -->
+        <section class="screen" id="s-crew" aria-label="Crew board">
+          <div class="hdr"><div><div class="eyebrow">FRI, OCT 9 · DECOR TEAMS</div><div class="h1">Crew board</div></div></div>
+          <div class="card" style="background:var(--amberBg);color:var(--amberInk)"><b>1 calendar flag</b><span style="font-size:14px">TM ODO event on Oct 8 has no crew or scope</span></div>
+          <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><span><b style="font-family:var(--display);font-size:18px">TM</b><span style="display:block;font-size:13px;color:var(--sub)">D01 · D02 · D04 · Lead: Mike</span></span><span class="pill p-blue">6 on site</span></div><div style="display:flex;justify-content:space-between;font-size:15px"><span>Mike, Shaun, Michael, DeMarco, Raul, Brogan</span></div><div style="display:flex;justify-content:space-between;font-size:14px;color:var(--sub)"><span>Last update</span><span id="tmUpd" style="font-weight:700;color:var(--amberInk)">Due 12:00</span></div></div>
+          <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><span><b style="font-family:var(--display);font-size:18px">SM</b><span style="display:block;font-size:13px;color:var(--sub)">MW-03A/B · D03 · S01 · Lead: Ian</span></span><span class="pill p-blue">4 on site</span></div><div style="font-size:15px">Ian, Napolion, Brandon, Patrick</div><div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:var(--sub)">Last update</span><span>9:36 AM</span></div></div>
+          <div class="rows"><div class="listrow">Shop 9000<em>Eric</em></div><div class="listrow">Time off<em>Matt</em></div></div>
+        </section>
+
+        <!-- PLAN TOMORROW -->
+        <section class="screen" id="s-plan" aria-label="Plan tomorrow">
+          <div class="hdr"><div><div class="eyebrow">TM · SAT, OCT 10 · LEAD: MIKE</div><div class="h1">Plan tomorrow</div></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <label class="card" style="gap:2px"><span style="font-size:13px;color:var(--sub)">Start time</span><input id="pStart" value="10:00 AM" style="font-family:var(--display);font-size:22px;font-weight:700;border:0;padding:0;background:transparent;color:var(--ink);width:100%"></label>
+            <label class="card" style="gap:2px"><span style="font-size:13px;color:var(--sub)">Meet at</span><input id="pMeet" value="Pass-through window" style="font-size:15px;font-weight:600;border:0;padding:5px 0 0;background:transparent;color:var(--ink);width:100%"></label>
+          </div>
+          <div class="card" style="gap:12px">
+            <b style="font-family:var(--display)">Order of work</b>
+            <div style="display:flex;gap:12px"><span class="pill" style="background:var(--btn);color:#fff;border-radius:13px">1</span><span><b>D2</b> · Assemble next sections<span style="display:block;font-size:13px;color:var(--sub)">Shaun, Raul</span></span></div>
+            <div style="display:flex;gap:12px"><span class="pill p-blue" style="border-radius:13px">2</span><span><b>D1</b> · Upper valance<span style="display:block;font-size:13px;color:var(--sub)">Michael, Brogan, DeMarco</span></span></div>
+          </div>
+          <label class="card"><b style="font-family:var(--display)">Notes for the crew</b><input class="field" id="pNote" value="Lift plan review before we lift anything."></label>
+          <button class="cta" id="postPlan">Post plan to crew</button>
+        </section>
+
+        <!-- END OF DAY -->
+        <section class="screen" id="s-eod" aria-label="End of day">
+          <div class="hdr"><div><div class="eyebrow">TM · FRIDAY, OCT 9</div><div class="h1">Wrap up your day</div><div style="font-size:15px;color:var(--sub);margin-top:4px">Finish your EOD list, check your email, send.</div></div></div>
+          <div class="card" style="gap:6px;padding-bottom:6px"><div style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow">YOUR WRAP-UP</span><span class="pill p-blue" id="eodRtPill">0 of 0</span></div><span style="font-size:13px;color:var(--sub)">From the TM Mobilize card in Trello · assigned by Mike</span><div class="fsec" id="eodRt"></div></div>
+          <div class="card" style="gap:12px"><div style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow">YOU FINISHED</span><span class="pill p-ok" id="eodCount">2 tasks</span></div><div id="eodList" style="display:flex;flex-direction:column;gap:10px;font-size:16px"></div></div>
+          <div class="card" style="flex-direction:row;justify-content:space-between;align-items:center"><span><span class="eyebrow">HOURS</span><span class="big" style="display:block;font-size:30px;margin-top:2px">10.0</span><span style="font-size:14px;color:var(--sub)" id="eodHrs">From Paychex Flex · 9:58 AM to now</span></span><button class="soft" style="background:var(--field);padding:0 16px;min-height:44px" data-toast="Adjust hours if the times are off">Edit</button></div>
+          <div class="card aicard" style="gap:8px"><div style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow" style="color:var(--accent)">✦ YOUR EOD EMAIL · AI DRAFT</span><span style="font-size:12px;color:var(--sub)">From your check-ins</span></div><span style="font-size:13px;color:var(--sub)">To the install manager and Mr. O'Connor</span><textarea class="field" id="eodMail" rows="6" style="height:auto;min-height:140px;padding:10px 14px;font-family:inherit;line-height:1.4;resize:none;background:var(--surface)"></textarea><input class="field" id="eodNote" aria-label="Anything that would help" placeholder="Anything that would help the team work better or safer?" style="background:var(--surface)"></div>
+          <div class="spacer"></div>
+          <button class="cta" id="sendEod">Send EOD email and clock out</button>
+          <span style="font-size:13px;color:var(--sub);text-align:center">Then punch out and get a good rest. Home switches to tomorrow's start time.</span>
+        </section>
+
+
+        <!-- MY SCHEDULE -->
+        <section class="screen" id="s-sched" aria-label="My schedule">
+          <div class="hdr"><div><div class="eyebrow" id="schedWho">MIKE · NEXT 4 WEEKS</div><div class="h1">My schedule</div></div><span style="font-size:13px;color:var(--sub);padding-bottom:6px;text-align:right">Decor Teams +<br>Time Off calendars</span></div>
+          <div class="card" style="padding:12px 10px 10px;gap:8px">
+            <div class="cal" id="calGrid"></div>
+            <div class="legend"><span><i class="k-job"></i>Job</span><span><i class="k-travel"></i>Travel</span><span><i class="k-shop"></i>Shop</span><span><i class="k-off"></i>Off</span></div>
+          </div>
+          <div class="card" id="dayCard" style="gap:6px"></div>
+          <span class="eyebrow" style="padding:6px 6px 0">COMING UP</span>
+          <div class="rows" id="blocks"></div>
+          <button class="soft" style="background:var(--tint);color:var(--accent)" data-toast="Request goes to the Install Shop and Time Off calendar for approval">Request time off</button>
+        </section>
+
+        <!-- SAFETY FORMS -->
+        <section class="screen" id="s-safety" aria-label="Safety forms">
+          <div class="hdr"><div><div class="eyebrow">TM · 5302-1 · I-5 PROCORE FORMS</div><div class="h1">Safety</div></div></div>
+          <div class="card" style="flex-direction:row;gap:10px;align-items:center;padding:12px 14px"><span style="width:8px;height:8px;border-radius:4px;background:var(--okInk);flex-shrink:0"></span><span style="font-size:14px;color:var(--sub)">Fill them out here. Each one posts to the TM project in Procore when you submit.</span></div>
+          <div id="formGroups" style="display:flex;flex-direction:column;gap:10px"></div>
+        </section>
+
+        <!-- PROCORE FORM (one screen, any of the 10 templates) -->
+        <section class="screen" id="s-form" aria-label="Procore form">
+          <div class="hdr"><div style="min-width:0"><div class="eyebrow" id="formEyebrow">TM · 5302-1 · PROCORE FORM</div><div class="h1" id="formTitle">Lift plan</div><div style="font-size:13px;color:var(--sub);margin-top:3px" id="formSub"></div></div><span class="pill p-red" id="formPill" style="margin-bottom:8px">Required</span></div>
+          <div id="formBody" style="display:flex;flex-direction:column;gap:10px"></div>
+          <div class="upbar" id="upbar" style="display:none"><i id="upfill"></i></div>
+          <button class="cta" id="submitForm">Submit to Procore</button>
+          <span style="font-size:13px;color:var(--sub);text-align:center" id="formFoot"></span>
+          <span class="api" id="formApi"></span>
+        </section>
+
+        <!-- MY DAY (Mobilize / Pre-lunch / EOD) -->
+        <section class="screen" id="s-routine" aria-label="My day">
+          <div class="hdr"><div><div class="eyebrow" id="rtWho">RAUL · TM · FRI, OCT 9</div><div class="h1">My day</div><div style="font-size:13px;color:var(--sub);margin-top:3px">From the Daily SOP and the TM Mobilize card · assigned by Mike</div></div></div>
+          <div id="rtBody" style="display:flex;flex-direction:column;gap:10px"></div>
+        </section>
+
+        <!-- 2-HOUR CHECK-IN -->
+        <section class="screen" id="s-checkin" aria-label="Two-hour check-in">
+          <div class="hdr"><div><div class="eyebrow" id="ciBlock">TM · 10:00 AM – 12:00 PM</div><div class="h1">Vibe Board check-in</div><div style="font-size:14px;color:var(--sub);margin-top:3px">Every 2–3 hours. Check off work and review what's next. Trello updates for you.</div></div></div>
+          <span class="eyebrow" style="padding:4px 6px 0">WHAT GOT DONE?</span>
+          <div class="rows" id="ciDone"></div>
+          <span class="eyebrow" style="padding:4px 6px 0">NEXT 2 HOURS</span>
+          <div class="rows" id="ciNext"></div>
+          <span class="eyebrow" style="padding:4px 6px 0">ANYTHING IN THE WAY? <span style="font-family:var(--body);letter-spacing:0;font-weight:400">(optional)</span></span>
+          <div class="card" style="gap:8px"><span class="chipset" id="ciBlockers"><button data-blk="Missing parts">Missing parts</button><button data-blk="Damage">Damage</button><button data-blk="Drawing question">Drawing question</button><button data-blk="Need a Zoom">Need a Zoom</button></span><input class="field" id="ciNote" placeholder="Say it or type it" aria-label="Note"></div>
+          <button class="cta" id="ciSend">Update Trello</button>
+          <span style="font-size:13px;color:var(--sub);text-align:center" id="ciFoot">Moves your cards on the TM board. Mike's 2-hr update uses this.</span>
+        </section>
+
+        <!-- FIND FLIGHTS -->
+        <section class="screen" id="s-flights" aria-label="Find flights">
+          <div class="hdr"><div><div class="eyebrow">NEXT TRIP · OCT 19 – 23 · [NEXT JOB]</div><div class="h1">Find flights</div></div></div>
+          <div class="card" style="gap:8px">
+            <div class="kv" style="grid-template-columns:1fr 1fr"><label class="fq col" style="padding:0"><small style="color:var(--sub);font-size:13px">From</small><input class="field" value="[PDX] Portland" aria-label="From"></label><label class="fq col" style="padding:0"><small style="color:var(--sub);font-size:13px">To</small><input class="field" value="[Airport] near site" aria-label="To"></label>
+            <label class="fq col" style="padding:0"><small style="color:var(--sub);font-size:13px">Fly out</small><input class="field" value="Mon, Oct 19" aria-label="Fly out"></label><label class="fq col" style="padding:0"><small style="color:var(--sub);font-size:13px">Fly home</small><input class="field" value="Fri, Oct 23" aria-label="Fly home"></label></div>
+            <span style="font-size:12px;color:var(--sub)">Filled in from your Decor Teams calendar and home airport</span>
+            <div id="fsWho"></div>
+            <button class="cta" id="fsGo">Search flights</button>
+          </div>
+          <div id="fsRes" style="display:flex;flex-direction:column;gap:10px"></div>
+        </section>
+
+        <div class="sheetbg" id="sheetBg"></div>
+        <div class="sheet" id="sheet" role="dialog" aria-label="Pick your task">
+          <span class="grab"></span>
+          <b style="font-family:var(--display);font-size:20px" id="sheetT">What are you working on?</b>
+          <span style="font-size:14px;color:var(--sub)" id="sheetS">Sets the drawing for safety forms, flags, Zoom calls and Ask AI.</span>
+          <div id="sheetList" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto"></div>
+        </div>
+        <div class="toast" id="toast" role="status"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M20 6L9 17l-5-5"/></svg><span id="toastT">Sent</span></div>
+
+        <nav class="nav" aria-label="Tabs">
+          <button data-tab="home" class="on"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+          <button data-tab="tasks"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>Tasks</button>
+          <button data-tab="travel"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>Travel</button>
+          <button data-tab="ask"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>Ask AI</button>
+          <button data-tab="more"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>More</button>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const phone = $('#phone');
+const LEAD = 'Mike', CREW = 'Raul';
+const fresh = () => ({
+  role:'lead', screen:'home', dark:false, punch:{lead:{st:'out'},crew:{st:'out'}}, liftDone:false, updSent:false, zoomSent:false, eod:false, plan:false, crewI:0, since:[], f:{}, cur:{lead:null,crew:null}, booked:false, shared:false, crewBooked:{}, fs:null, zp:{}, radio15:false, eodEdited:false, autoMatch:true, autoBooked:false, phase:'mob', rt:{}, ci:{lead:{a:{},next:null,blk:[],sent:0},crew:{a:{},next:null,blk:[],sent:0}}, block:0, selDay:9,
+  tasks:[
+    {d:'D4',t:'Unload crate sections',done:true,who:'Mike'},
+    {d:'D4',t:'Bring both sections in',done:true,who:'Raul'},
+    {d:'D4',t:'Set middle frame',who:'Mike'},
+    {d:'D4',t:'Add screws per structural',who:'Raul'},
+    {d:'D2',t:'Assemble beams and screens',who:'Raul'},
+    {d:'D2',t:'Lift and level first sections',who:'Shaun'},
+    {d:'D1',t:'Upper valance',who:'Michael',blocked:true},
+    {d:'D1',t:'Unload valance sections',who:'Raul'},
+    {d:'D4',t:'Fix left edge banding',who:'Brogan'}
+  ]
+});
+let S = fresh();
+const crewQ = [3,4,7];
+
+const tabOf = {homeLead:'home',homeCrew:'home',evening:'home',update:'home',tasks:'tasks',travel:'travel',ask:'ask',more:'more',crew:'more',plan:'more',eod:'more',sched:'more',safety:'home',form:'home',routine:'home',checkin:'home',flights:'travel'};
+function resolve(name){
+  if(name==='home') return S.role==='lead' ? 'homeLead' : (S.eod ? 'evening' : 'homeCrew');
+  return name;
+}
+function go(name){
+  const id = resolve(name); S.screen = id;
+  $$('.screen').forEach(el => el.classList.toggle('on', el.id === 's-'+id));
+  $$('.nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === tabOf[id]));
+  $('#askBar').style.display = id==='ask' ? 'flex' : 'none';
+  const sc = $('#s-'+id); if(sc) sc.scrollTop = 0;
+}
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-go]'); if(g && phone.contains(g)){ go(g.dataset.go); return; }
+  const t = e.target.closest('[data-tab]'); if(t){ go(t.dataset.tab); return; }
+  const m = e.target.closest('[data-toast]'); if(m && phone.contains(m)){ toast(m.dataset.toast); }
+});
+
+let toastTimer;
+function toast(msg){ $('#toastT').textContent = msg; $('#toast').classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(()=>$('#toast').classList.remove('show'), 2600); }
+let notifTap = null;
+function notify(title, body, onTap){ $('#nTitle').textContent = title; $('#nBody').textContent = body; notifTap = onTap; $('#notif').classList.add('show'); setTimeout(()=>$('#notif').classList.remove('show'), 4200); }
+$('#notif').addEventListener('click', () => { $('#notif').classList.remove('show'); if(notifTap) notifTap(); });
+
+function curIdx(role){ role = role || (S.role==='lead'?'lead':'crew'); const c = S.cur[role];
+  if(c!=null && !S.tasks[c].done) return c;
+  if(role==='lead'){ const i = S.tasks.findIndex(t=>!t.done && t.who===LEAD && !t.blocked); return i<0 ? undefined : i; }
+  return crewQ.find(i=>!S.tasks[i].done); }
+function curTask(){ const i = curIdx(); return i===undefined ? null : S.tasks[i]; }
+function aiFor(t){
+  if(!t) return {task:'General install work', haz:'Trip hazards, cuts', ppe:'Gloves', mit:'Keep the area clean, communicate with the crew.'};
+  const x = t.t.toLowerCase(), job = t.d+': '+t.t+'.';
+  if(/unload|crate|bring/.test(x)) return {task:job, haz:'Forklift and pallet jack moving crates. Crush zones and pinch points. Pedestrian traffic on the load path.', ppe:'Gloves. Safety vest.', mit:'Forklift daily inspection done. Spotter walks the load path. Block the path with stanchions. Two people on every section.'};
+  if(/lift|set middle|valance|level/.test(x)) return {task:job, haz:'Lifting large '+t.d+' sections overhead. Pinch points setting frames. Guests and staff walking near the bar.', ppe:'Gloves. Safety vest near the guest walkway.', mit:'Block off the work area and load path with stanchions. Spotter and signal person (Shaun) on every lift. Lift awkward sections with two or more people. Decor Lift Plan done before we lift.'};
+  if(/screw|structural|banding|edge/.test(x)) return {task:job, haz:'Drilling at height on ladders. Cuts from screws and sharp edges. Dust near guests.', ppe:'Gloves. Dust mask if sanding.', mit:'Ladder footed and inspected. Keep tools tethered at height. Clean dust as we go. Rope off below.'};
+  if(/assemble|beam|screen/.test(x)) return {task:job, haz:'Pinch points assembling beams and screens. Cuts from metal edges. Lifting awkward pieces.', ppe:'Gloves.', mit:'Two people on awkward pieces. Use carts and rollers. Proper lifting technique. Keep the assembly area clear.'};
+  return {task:job, haz:'Cuts, lifting strain, trip hazards.', ppe:'Gloves.', mit:'Proper lifting technique. Keep the area clean.'};
+}
+function resetDraft(){ if(S.f && S.f.assess && !S.f.assess.done) S.f.assess = null; if(S.f && S.f.lift && !S.f.lift.done && S.f.lift.drafted && !Object.keys(S.f.lift.ed||{}).length) S.f.lift = null; }
+function openPicker(){
+  const role = S.role==='lead'?'lead':'crew', who = role==='lead'?LEAD:CREW, cur = curIdx();
+  const row = i => { const t = S.tasks[i]; return `<button class="trow ${i===cur?'cur':''}" data-pick="${i}" ${t.blocked?'disabled':''}><b>${t.d}</b><span>${t.t}<small>${t.who}${t.blocked?' · on hold':''}</small></span>${i===cur?'<span class="pill p-blue">Now</span>':t.blocked?'<span class="pill p-amber">Ceiling hold</span>':''}</button>`; };
+  const open = S.tasks.map((t,i)=>i).filter(i=>!S.tasks[i].done);
+  const mine = open.filter(i=>S.tasks[i].who===who), rest = open.filter(i=>S.tasks[i].who!==who);
+  $('#sheetList').innerHTML = `<span class="eyebrow" style="padding:4px 6px 0">YOURS</span><div class="rows">${mine.map(row).join('')||'<div class="trow">Nothing left</div>'}</div><span class="eyebrow" style="padding:4px 6px 0">HELPING THE CREW</span><div class="rows">${rest.map(row).join('')}</div>`;
+  $('#sheetT').textContent='What are you working on?'; $('#sheetS').textContent='Sets the drawing for safety forms, flags, Zoom calls and Ask AI.';
+  $('#sheet').classList.add('show'); $('#sheetBg').classList.add('show');
+}
+function closePicker(){ $('#sheet').classList.remove('show'); $('#sheetBg').classList.remove('show'); }
+function pickTask(i){ const role = S.role==='lead'?'lead':'crew'; S.cur[role] = i; resetDraft(); render(); closePicker();
+  const t = S.tasks[i]; toast('Working on '+t.d+' · '+t.t+'. Forms, flags and Ask AI now use '+t.d+'.'); }
+document.addEventListener('click', e => { if(e.target.closest('#pickLead,#pickCrew')){ openPicker(); return; } const pk = e.target.closest('[data-pick]'); if(pk){ pickTask(+pk.dataset.pick); return; } if(e.target.id==='sheetBg') closePicker(); });
+function render(){
+  if(typeof renderForms==='function'){ renderForms(); renderSched(); }
+  const done = S.tasks.filter(t=>t.done).length;
+  $('#leadCount').textContent = done+' of 9';
+  $('#leadBar').style.width = Math.round(done/9*100)+'%';
+  $('#taskCount').textContent = done+' of 9 done';
+  $('#crewLeft').textContent = 'All tasks · '+(9-done)+' left';
+  const lt = S.tasks[curIdx('lead')];
+  $('#leadNext').textContent = lt ? lt.d+' · '+lt.t : 'Your tasks are done';
+  const ct = curTask(), cd = ct ? ct.d : 'TM';
+  $('#tFlag').dataset.toast = 'Photo + '+cd+' drawing # posts to Production Engineers and adds to the '+cd+' Trello card';
+  $('#askDraw').textContent = cd;
+  $('#chipCrate').dataset.q = $('#chipCrate').textContent = 'Which crate is '+cd+' in?';
+  $('#chipFast').dataset.q = $('#chipFast').textContent = 'Fastener spec for '+cd;
+
+  const groups = {};
+  S.tasks.forEach((t,i)=>{ (groups[t.d] = groups[t.d] || []).push([t,i]); });
+  $('#taskList').innerHTML = Object.keys(groups).map(d => `
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="group-h"><b>${d}</b></div>
+      <div class="rows">${groups[d].map(([t,i]) => `
+        <div class="row ${t.done?'done':''}" id="task-${i}"><span class="t">${t.t}<span class="who-tag">${t.who}</span></span>
+        ${t.done ? '<span class="stat" style="background:var(--okBg);color:var(--okInk)">Done</span>' : t.blocked ? '<span class="stat" style="background:var(--amberBg);color:var(--amberInk)">Ceiling hold</span>' : (i===curIdx('lead')||i===curIdx('crew')) ? '<span class="stat" style="background:var(--tint);color:var(--accent)">Doing</span>' : '<span class="stat" style="background:var(--field);color:var(--sub)">To do</span>'}</div>`).join('')}
+      </div></div>`).join('');
+
+  const items = ['Unloaded D4 crate, got the sections we needed','Brought both D4 sections in'].concat(S.since);
+  $('#updItems').innerHTML = items.map((x,i)=>`<label style="display:flex;gap:12px;align-items:center"><input type="checkbox" checked id="ui-${i}" style="width:22px;height:22px;accent-color:var(--btn);margin:0;flex-shrink:0">${x}</label>`).join('');
+  const extra = $('#updExtra').value.trim();
+  $('#updPreview').textContent = '@Todd Robison TM 2 hour update:\n' + items.join('\n') + (extra ? '\n'+extra : '');
+  const su = $('#sendUpd'); su.textContent = S.updSent ? 'Sent to Production Engineers ✓' : 'Send update'; su.classList.toggle('sent', S.updSent);
+  $('#updBadge').className = 'pill ' + (S.updSent ? 'p-ok' : 'p-amber'); $('#updBadge').textContent = S.updSent ? 'Sent' : '12:00';
+  $('#updSub').textContent = S.updSent ? 'Next due 2:00 PM' : 'Post to Todd';
+  $('#tmUpd').textContent = S.updSent ? '11:58 AM' : 'Due 12:00'; $('#tmUpd').style.color = S.updSent ? 'var(--ink)' : 'var(--amberInk)';
+
+  const la = $('#liftAlert'); la.className = 'alert ' + (S.liftDone ? 'ok' : 'red');
+  $('#liftT').textContent = S.liftDone ? 'Lift plan submitted' : 'Lift plan needed';
+  $('#liftS').textContent = S.liftDone ? 'Procore · 10:14 AM · OK to lift D4' : 'Before lifting the D4 middle frame';
+  $('#liftBtn').style.display = S.liftDone ? 'none' : '';
+  $('#safBadge').className = 'pill ' + (S.liftDone ? 'p-ok' : 'p-red'); $('#safBadge').textContent = S.liftDone ? 'Done' : 'Now';
+  $('#safSub').textContent = S.liftDone ? (F('assess').done ? 'All forms in' : 'Safety assessment') : 'Lift plan';
+
+  renderPunch();
+  $$('.zoomSub').forEach(el => el.textContent = S.zoomSent ? 'Sent · Todd replied' : 'Todd and Dan');
+
+  const qi = curIdx('crew');
+  if(qi !== undefined){ $('#crewD').textContent = S.tasks[qi].d; $('#crewT').textContent = S.tasks[qi].t;
+    const after = crewQ.find(i=>i!==qi && !S.tasks[i].done); $('#crewAfter').textContent = after!==undefined ? 'After that: '+S.tasks[after].d+' · '+S.tasks[after].t : 'That is your last task today';
+    $('#markDone').textContent = ciLabel(); }
+  else { $('#crewD').textContent = 'All done'; $('#crewT').textContent = 'Nice work today'; $('#crewAfter').textContent = 'Wrap up your day from More › End of day'; $('#markDone').textContent = ciLabel(); }
+
+  const me = S.role==='crew' ? CREW : LEAD;
+  const mine = S.tasks.filter(t=>t.done && t.who===me);
+  $('#eodList').innerHTML = mine.map(t=>`<span style="display:flex;gap:12px;align-items:center"><span class="pill p-ok" style="border-radius:13px">✓</span><span><b>${t.d}</b> · ${t.t}</span></span>`).join('') || '<span style="color:var(--sub)">Nothing checked off yet</span>';
+  $('#eodCount').textContent = mine.length + (mine.length===1?' task':' tasks');
+  $('#eveSum').textContent = 'TM · 10 hrs · '+mine.length+(mine.length===1?' task':' tasks');
+  if(typeof renderPlanTile==='function') renderPlanTile();
+  if(typeof renderBook==='function') renderBook();
+  if(typeof renderVeh==='function') renderVeh();
+  if(typeof renderFlights==='function') renderFlights();
+  if(typeof renderSop==='function') renderSop();
+  if(typeof renderRoutine==='function'){ renderRoutine(); renderCheckin(); renderNow(); }
+  const pp = $('#postPlan'); pp.textContent = S.plan ? 'Posted to 5 crew ✓' : 'Post plan to crew'; pp.classList.toggle('sent', S.plan);
+  $('#planRow').style.display = S.role==='lead' ? '' : 'none';
+  $('#appearVal').textContent = S.dark ? 'Dark' : 'Light';
+  phone.classList.toggle('dark', S.dark);
+  $('#mLight').setAttribute('aria-pressed', !S.dark); $('#mDark').setAttribute('aria-pressed', S.dark);
+  $('#asLead').setAttribute('aria-pressed', S.role==='lead'); $('#asCrew').setAttribute('aria-pressed', S.role==='crew');
+  $('#trvWho').textContent = (S.role==='lead'?'MIKE':'RAUL') + ' · TM TRIP · TRAVEL DAY, WED OCT 7';
+  $('#flyWith').textContent = 'Booked in Egencia · Flying with ' + (S.role==='lead' ? 'Shaun, Michael, Raul, Brogan' : 'Mike, Shaun, Michael, Brogan');
+  $('#mates').textContent = S.role==='lead' ? 'Shaun, Raul' : 'Mike, Shaun';
+}
+
+$('#taskList').addEventListener('change', e => {
+  const i = +e.target.dataset.i; if(isNaN(i)) return;
+  const t = S.tasks[i]; t.done = e.target.checked; const line = t.d+' · '+t.t;
+  if(t.done) S.since.push(line); else S.since = S.since.filter(x => x !== line);
+  render();
+});
+$('#updExtra').addEventListener('input', render);
+function sendUpdate(){ if(S.updSent) return; S.updSent = true; S.block = Math.min(S.block+1,4); render(); toast('Posted to Production Engineers. Todd sees it now.'); setTimeout(()=>{ if(S.screen==='update') go('home'); }, 1500); }
+$('#sendUpd').addEventListener('click', sendUpdate);
+function liftForm(){ if(S.liftDone) return; openForm('lift'); }
+$('#liftBtn').addEventListener('click', liftForm);
+
+// ---------- schedule (sample data, would come from I-5 Decor Teams + Install Shop and Time Off) ----------
+const SCHED = {
+  lead:[
+    {from:5,to:6,k:'shop',t:'Shop',s:'Install Shop · prep TM crates'},
+    {from:7,to:7,k:'travel',t:'Fly to Fresno',s:'Egencia · [AS 0000] 2:40 PM'},
+    {from:8,to:10,k:'job',t:'Table Mountain · 5302-1',s:'Lead · crew of 6 · TM House 1'},
+    {from:11,to:11,k:'travel',t:'Fly home',s:'Egencia · [flight]'},
+    {from:12,to:14,k:'shop',t:'Shop',s:'Install Shop'},
+    {from:15,to:16,k:'off',t:'Time off',s:'Approved'},
+    {from:19,to:19,k:'travel',t:'Fly to [next job]',s:'Not booked yet · book in Travel'},
+    {from:20,to:23,k:'job',t:'[Next job] · [job #]',s:'Lead · crew of [#] · [house]'},
+    {from:26,to:30,k:'shop',t:'Shop',s:'Install Shop'}
+  ],
+  crew:[
+    {from:5,to:6,k:'shop',t:'Shop',s:'Install Shop'},
+    {from:7,to:7,k:'travel',t:'Fly to Fresno',s:'Egencia · with Mike\'s crew'},
+    {from:8,to:10,k:'job',t:'Table Mountain · 5302-1',s:'Lead: Mike · TM House 1'},
+    {from:11,to:11,k:'travel',t:'Fly home',s:'Egencia · [flight]'},
+    {from:12,to:14,k:'shop',t:'Shop',s:'Install Shop'},
+    {from:15,to:16,k:'off',t:'Time off',s:'Approved'},
+    {from:19,to:19,k:'travel',t:'Fly to [next job]',s:'Not booked yet · book in Travel'},
+    {from:20,to:23,k:'job',t:'[Next job] · [job #]',s:'Lead: Mike · [house]'},
+    {from:26,to:30,k:'shop',t:'Shop',s:'Install Shop'}
+  ]
+};
+const DOW = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+const dayName = d => ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][(d-5+70)%7];
+const dayOf = (d, who) => { const day = d>31 ? d-31 : d; return SCHED[who].find(b => day>=b.from && day<=b.to && d<=31); };
+const kName = {job:'Job',travel:'Travel',shop:'Shop',off:'Off'};
+function renderSched(){
+  const who = S.role==='lead' ? 'lead' : 'crew';
+  $('#schedWho').textContent = (who==='lead'?'MIKE':'RAUL') + ' · NEXT 4 WEEKS';
+  let h = DOW.map(d=>`<span class="dow">${d}</span>`).join('');
+  for(let w=0; w<4; w++){
+    for(let i=0;i<7;i++){
+      const d = 5 + w*7 + i, label = d>31 ? d-31 : d, b = dayOf(d, who);
+      const cls = [d<9?'past':'', d===9?'today':'', d===S.selDay?'sel':''].join(' ');
+      h += `<button class="${cls}" data-day="${d}" aria-label="${d>31?'Nov':'Oct'} ${label}${b?', '+b.t:''}"><span>${label}</span><i class="${b?'k-'+b.k:''}"></i></button>`;
+    }
+  }
+  $('#calGrid').innerHTML = h;
+  const d = S.selDay, b = dayOf(d, who), mon = d>31?'Nov':'Oct', lab = d>31?d-31:d;
+  $('#dayCard').innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-family:var(--display);font-size:17px">${dayName(d)}, ${mon} ${lab}${d===9?' · Today':''}</b>${b?`<span class="pill" style="background:var(--field);color:var(--ink)"><i class="k-${b.k}" style="display:inline-block;width:8px;height:8px;border-radius:4px;margin-right:5px"></i>${kName[b.k]}</span>`:''}</div>`
+    + (b ? `<span style="font-size:16px;font-weight:600">${b.t}</span><span style="font-size:14px;color:var(--sub)">${b.s}</span>` : `<span style="font-size:15px;color:var(--sub)">Nothing scheduled</span>`)
+    + (b && b.k!=='off' && dayName(d)==='Thu' ? `<span class="pill p-amber" style="align-self:flex-start">Starts with 1 hr online safety training</span>` : '')
+    + (b && b.k!=='off' && dayName(d)==='Fri' ? `<span class="pill p-blue" style="align-self:flex-start">Walkthrough for next week's installs</span>` : '')
+    + (b && b.k==='job' && d===b.to ? `<span class="pill p-blue" style="align-self:flex-start">Last onsite day · Demobilize</span>` : '');
+  $('#blocks').innerHTML = SCHED[who].filter(x=>x.to>=9).slice(0,6).map(x=>`<button class="blk" data-day="${Math.max(x.from,9)}" style="border-left:0;border-right:0;border-top:0;background:none;width:100%;text-align:left;color:var(--ink)"><span class="bar k-${x.k}"></span><span style="flex:1"><b>${x.t}</b><small>${x.s}</small></span><span style="font-size:14px;color:var(--sub);text-align:right;white-space:nowrap">${dayName(x.from)} ${x.from}${x.to>x.from?'–'+dayName(x.to)+' '+x.to:''}</span></button>`).join('');
+}
+phone.addEventListener('click', e => { const c = e.target.closest('[data-day]'); if(c){ S.selDay = +c.dataset.day; renderSched(); } });
+
+// ---------- in-app Procore forms (I-5's 10 company form templates, field-for-field) ----------
+const TEAM = ['Mike','Shaun','Michael','DeMarco','Raul','Brogan'];
+const FULL = {Mike:'Mike Williams',Raul:'Raul',Shaun:'Shaun',Michael:'Michael',DeMarco:'DeMarco Readye',Brogan:'Brogan'};
+const me = () => S.role==='lead' ? 'Mike' : 'Raul';
+const yn = (l) => ({t:'yn', l});
+const ck = (l) => ({t:'ck', l});
+const FORMS = {
+  assess:{tid:603821, name:'Safety Assessment Form', short:'Safety assessment', when:'Each new work area, before work starts', filed:150, group:'today',
+    sections:[{fields:[
+      {t:'area', l:'Identify the task', ai:()=>aiFor(curTask()).task},
+      {t:'people', l:'Who was part of this assessment?'},
+      {t:'area', l:'What potential safety hazards did you identify?', ai:()=>aiFor(curTask()).haz},
+      {t:'area', l:'Additional PPE besides hardhat, glasses and boots?', ai:()=>aiFor(curTask()).ppe},
+      {t:'area', l:'What steps will you take to reduce the hazard?', ai:()=>aiFor(curTask()).mit},
+      {t:'photo', l:'Photos of the work area after it is made safe'},
+      {t:'ck', l:'I read this draft and it matches our work area today', review:true}]}],
+    draft:true,
+    signs:[['Completed by','me']]},
+  lift:{tid:543481, name:'Decor Lift Plan Checklist', short:'Lift plan', when:'Before any decor lift', filed:2, group:'today', draft:true,
+    draftSrc:'the drawing and task you\'re lifting, the 5302-1 packing list, today\'s forklift inspection and the crew on the calendar',
+    draftNote:'Weights, equipment, hazards, checkpoints, roles and exit plan are drafted. The inspections and Yes/No checks stay blank for you, because someone has to actually look. Fix anything that\'s off, check each item, sign and submit.',
+    sections:[
+      {h:'The lift', fields:[{t:'text', l:'Project / décor ID', ai:()=>liftAI().id},{t:'text', l:'Documented weight', ai:()=>liftAI().wt},yn('Décor center of gravity established'),{t:'text', l:'Lifting machinery and load capacity', ai:()=>liftAI().mach},{t:'text', l:'Material lifts (qty)', ai:()=>liftAI().qty},{t:'text', l:'Lifting accessories (rigging, chainfalls, shackles)', ai:()=>liftAI().acc}]},
+      {h:'Inspect', fields:[yn('Inspect machinery'),yn('Inspect rigging and accessories'),yn('Identify and inspect décor lifting points'),yn('Verify lifting points'),yn('Supports secured (horses, 4x4s, aluminum tube)')]},
+      {h:'Prepare the area', fields:[yn('Ground is clear for the lift'),yn('Perimeter set with barriers'),{t:'area', l:'Hazards during the lift', ai:()=>liftAI().haz}]},
+      {h:'Lift execution checkpoints', fields:[{t:'area', l:'Checkpoints', ai:()=>liftAI().chk}]},
+      {h:'Brief the team', fields:[{t:'people', l:'Personnel'},{t:'area', l:'Roles', ai:()=>liftAI().roles},{t:'text', l:'Exit plan', ai:()=>liftAI().exit},{t:'text', l:'Exit signal', ai:()=>liftAI().sig},
+        {t:'ck', l:'I read this draft and it matches the lift we\'re doing', review:true}]}],
+    signs:[['Authorized by','me']]},
+  daily:{tid:512188, name:'Onsite Daily Sign In Sheet', short:'Daily sign in', when:'Everyone on site, every day', filed:0, group:'today',
+    sections:[{fields:[{t:'signin', l:'Crew on site today', orient:true}]}], signs:[]},
+  fork:{tid:656232, name:'Class VII Forklift (Rough Terrain) Daily Inspection Checklist', short:'Forklift daily inspection', when:'Before you run the forklift', filed:18, group:'equip',
+    sections:[
+      {h:'General information', fields:[{t:'text', l:'Equipment ID #', ph:'[ID]', sample:'[ID]'},{t:'text', l:'Make / model', sample:'[Make / model]'},{t:'text', l:'Serial number', sample:'[Serial]'},{t:'text', l:'Hour meter reading', sample:'[Hours]'},{t:'text', l:'Location', v:()=>'Table Mountain · 5302-1 · '+(curTask()?curTask().d:'')},{t:'text', l:'Operator', v:()=>FULL[me()]},{t:'text', l:'Date', v:()=>'Fri, Oct 9'},{t:'text', l:'Weather', sample:'Indoors'}]},
+      {h:'Documentation and decals', fields:['Operator’s manual present','Load capacity plate legible','Warning decals legible','Inspection log current'].map(yn)},
+      {h:'Structure and frame', fields:['Overhead guard secure and undamaged','No visible cracks in frame','Steps and handholds secure','Mirrors intact and adjusted'].map(yn)},
+      {h:'Tires and wheels', fields:['Tire condition acceptable','Proper inflation (pneumatic tires)','Lug nuts tight','Wheel rims undamaged'].map(yn)},
+      {h:'Forks and mast', fields:['Forks not bent or cracked','Fork locking pins secure','Mast rails lubricated','Chains properly tensioned','Chain anchors secure','No excessive wear on carriage','Tilt cylinders secure','Load backrest secure'].map(yn)},
+      {h:'Hydraulics', fields:['No visible hydraulic leaks','Hydraulic hoses intact','Fittings secure','Fluid levels adequate'].map(yn)},
+      {h:'Engine compartment', fields:['Engine oil level adequate','Coolant level adequate','Fuel level adequate','No fuel leaks','Battery secure','Battery terminals clean','Belts in good condition','Air filter condition acceptable'].map(yn)},
+      {h:'Engine running · starting and gauges', fields:['Starts properly','Gauges functioning','No warning lights','No unusual noises'].map(yn)},
+      {h:'Controls and steering', fields:['Steering smooth and responsive','Horn operational','Backup alarm working','Lights operational','Turn signals (if equipped)','Parking brake holds','Service brake responsive','Seatbelt functional'].map(yn)},
+      {h:'Hydraulic functions', fields:['Lift operates smoothly','Lower operates smoothly','Tilt forward/back smooth','Side shift (if equipped)','Stabilizers (if equipped)'].map(yn)},
+      {h:'Transmission and drive', fields:['Forward/reverse operates correctly','No jerking or hesitation','Differential lock (if equipped)'].map(yn)},
+      {h:'Attachments (if used)', fields:['Attachment securely mounted','Attachment hydraulics functioning','Capacity plate updated for attachment'].map(yn)},
+      {h:'Safety systems', fields:['Fire extinguisher present and charged','Operator restraint system functional','Emergency shut-off operational','No visible safety hazards'].map(yn)},
+      {h:'Deficiencies', fields:[{t:'area', l:'Describe any deficiencies found', sample:'None'}]},
+      {h:'Operator certification', fields:[{t:'choice', l:'Result', opts:['Safe to operate','Unsafe until repaired']}]}],
+    signs:[['Operator signature','me'],['Supervisor signature','lead']]},
+  scissor:{tid:658400, name:'Scissor Lift Inspection Checklist', short:'Scissor lift inspection', when:'Before each shift on a scissor lift', filed:16, group:'equip',
+    sections:[
+      {h:'General information', fields:[{t:'text', l:'Company', v:()=>'I-5 Design Build'},{t:'text', l:'Project / location', v:()=>'Table Mountain · 5302-1'},{t:'text', l:'Lift manufacturer / model', sample:'[Make / model]'},{t:'text', l:'Serial number', sample:'[Serial]'},{t:'text', l:'Date', v:()=>'Fri, Oct 9'},{t:'text', l:'Inspector (competent person)', v:()=>FULL[me()]}]},
+      {h:'Documentation and training', fields:['Operator has documented training (OSHA 1926.454)','Operator authorized by employer','Operator familiar with manufacturer’s manual','Operator manual present on lift','Annual inspection documentation available','Frequent inspection (if required) documented','Daily pre-shift inspection performed'].map(yn)},
+      {h:'Structure and platform', fields:['No structural damage to scissor stack','Guardrails (toprail, midrail, toeboard) secure','Entry gate/chain closes properly','Platform floor intact and slip-resistant','Manufacturer warning decals legible','Load capacity markings visible'].map(yn)},
+      {h:'Hydraulic system', fields:['No hydraulic leaks','Fluid levels adequate','Hoses free of cracks, wear, bulges','Fittings secure'].map(yn)},
+      {h:'Electrical / power', fields:['Battery charged and secured (electric units)','Wiring intact, no exposed conductors','Control panels functional','No fault indicators active'].map(yn)},
+      {h:'Engine (if equipped)', fields:['Oil level correct','Coolant level correct','No fuel leaks','Exhaust secure'].map(yn)},
+      {h:'Wheels and base', fields:['Tires inflated / solid tires intact','No excessive wear or damage','Wheel nuts tight','Outriggers (if equipped) functional'].map(yn)},
+      {h:'Function test', fields:['Ground controls operate properly','Platform controls operate properly','Emergency stops work (both stations)','Lift raises/lowers smoothly','Brakes hold firmly','Steering functions correctly','Tilt alarm operational','Descent alarm operational','Pothole protection operational','Platform extension locks securely'].map(yn)},
+      {h:'Fall protection and guarding', fields:['Guardrails installed and secure','No climbing or standing on rails observed','Fall arrest used if required','Anchor points inspected (if used)'].map(yn)},
+      {h:'Worksite hazards', fields:['Ground firm, level and can support the load','No drop-offs or floor openings nearby','Overhead obstructions identified','Safe distance from power lines','Weather within manufacturer limits','Traffic control / barricades if required','No unauthorized people in work zone'].map(yn)},
+      {h:'Operating compliance', fields:['Load does not exceed rated capacity','Materials evenly distributed','Lift used only for intended purpose','No modifications without approval','Safe travel speed maintained','Lift lowered before moving'].map(yn)},
+      {h:'Deficiencies and corrective actions', fields:[{t:'area', l:'Describe any deficiencies found', sample:'None'}]},
+      {h:'Operator certification', fields:[{t:'choice', l:'Result', opts:['Safe to operate','Repairs required before use','Removed from service (tag out)']}]}],
+    signs:[['Operator signature','me'],['Supervisor signature','lead']]},
+  hot:{tid:638559, name:'Hot Work Permit Form', short:'Hot work permit', when:'Welding, cutting or grinding · valid 1 shift', filed:2, group:'equip',
+    sections:[
+      {h:'Permit', fields:[{t:'text', l:'Permit number', v:()=>'TM-HW-[#]'},{t:'text', l:'Date and time', v:()=>'Fri, Oct 9 · now'},{t:'text', l:'Issued by', v:()=>FULL[me()]},{t:'text', l:'Position', v:()=>S.role==='lead'?'Lead installer':'Installer'}]},
+      {h:'Details of work', fields:[{t:'text', l:'Period of work', sample:'10:30 AM – 12:00 PM'},{t:'text', l:'Exact location', v:()=>'Bar area · '+(curTask()?curTask().d:'')},{t:'text', l:'Equipment for the operation', sample:'[Grinder]'},{t:'text', l:'Fire hazard', sample:'Sawdust, finished panels'},{t:'text', l:'Other hazards', sample:'None'},{t:'text', l:'Fire watch (if required)', sample:'Shaun'},{t:'people', l:'Person(s) doing hot work'}]},
+      {h:'Supervisor checklist', fields:['Sprinklers and hose streams in service','Hot work equipment in good condition','Fire extinguisher and/or water pump nearby','Escape routes set and clear'].map(yn)},
+      {h:'Within 35 ft of work', fields:['Dust, lint, debris, flammable liquids, oily rags removed','Explosive atmosphere eliminated','Combustible floors wet, sanded or covered','Flammable and combustible materials removed','Wall and floor openings covered','Walkways protected beneath hot work','Fire watch is required'].map(yn)},
+      {h:'Walls or ceilings', fields:[yn('Combustibles removed from other side of wall')]},
+      {h:'Confined space', fields:['Confined space cleaned of combustibles','Containers/space cleared of liquids and vapors','Confined space guidelines followed'].map(yn)},
+      {h:'Fire watch', fields:['Fire watch during and 30 min after work','Fire watch has an inspected extinguisher or pump','Fire watch trained and knows the EAP','Fire watch for opposite side of walls, floors, ceilings'].map(yn)},
+      {h:'Other precautions', fields:[{t:'area', l:'Other precautions', sample:'None'}]}],
+    signs:[['Manager signature','lead'],['Permit closed by','me']]},
+  trailer:{tid:629749, name:'Trailer Driving Checklist', short:'Trailer driving checklist', when:'After each stop, before you drive on', filed:7, group:'travel',
+    sections:[
+      {h:'Driver and trailer', fields:[{t:'text', l:'Trained and certified driver', v:()=>FULL[me()]},{t:'text', l:'Date', v:()=>'Fri, Oct 9'},{t:'text', l:'Trailer ID', ph:'[Trailer ID]', sample:'[Trailer ID]'},{t:'info', l:'55 MPH max towing · no left-most lane · 4-second following distance'}]},
+      {h:'Safety equipment (must have)', fields:['Jumper cables','High visibility markers','Socket for lug nuts','Breaker bar','Funnel','Snow chains'].map(ck)},
+      {h:'Personal', fields:['Ramp card has at least $500 (if not, email cc@i5 and copy Todd)','Driver’s license','Insurance','Registration','Trained and authorized to tow an I-5 trailer'].map(ck)},
+      {h:'Tires', fields:['Tires at 75–80 PSI','No damage or leaks around axle seals','Tires have enough tread','No straps rubbing on tires','Air bag suspension and switch work'].map(ck)},
+      {h:'Trailer', fields:['Wood decking secure and undamaged','Hitching pins and bolts','Release arm','Frame (no broken welds)','Lights','Current tags and registration','Current trailer inspection','Trailer brakes work, controller adjusted','Hook up: right ball size, safety chains, plug connected'].map(ck)},
+      {h:'Lights', fields:['Turn signals','Brake lights','Reverse lights','Hazards','High beams'].map(ck)},
+      {h:'Loads', fields:['Straps in place and secure','Items loaded are correct','Load under capacity (gooseneck 16.5K lbs)','Gooseneck loaded 60% front / 40% back','Load still secure (check every stop)'].map(ck)}],
+    signs:[['Driver','me']]},
+  weekly:{tid:697206, name:'Weekly Safety Meeting', short:'Weekly safety meeting', when:'Once a week, run by the lead', filed:5, group:'team',
+    sections:[
+      {fields:[{t:'text', l:'Project', v:()=>'Table Mountain Sports Bar'},{t:'text', l:'Project number', v:()=>'5302-1'},{t:'text', l:'Location', v:()=>'Table Mountain Casino'},{t:'text', l:'Date and time', v:()=>'Fri, Oct 9 · 10:00 AM'},{t:'text', l:'Superintendent', v:()=>'Mike Williams'},{t:'text', l:'Safety topic(s)', sample:'Lifting overhead in a public space'},{t:'text', l:'Presenter', v:()=>'Mike Williams'}]},
+      {h:'Attendance and acknowledgment', fields:[{t:'info', l:'Each person confirms they attended, understood the topics and will follow the safety rules.'},{t:'signin', l:'Crew'}]},
+      {h:'Notes and action items', fields:[{t:'area', l:'Notes', sample:'Spotter on every lift this week.'}]}],
+    signs:[['Presenter signature','lead']]},
+  orient:{tid:506436, name:'Site Orientation Sign In Sheet', short:'Site orientation sign in', when:'First day on a new site', filed:0, group:'team',
+    sections:[{fields:[{t:'text', l:'Meeting time', v:()=>'7:00 AM'},{t:'text', l:'Location', v:()=>'Table Mountain Casino'},{t:'text', l:'Date', v:()=>'Thu, Oct 8'},{t:'info', l:'Includes the I-5 orientation video link'},{t:'signin', l:'Attendees'}]}],
+    signs:[]},
+  borrow:{tid:559064, name:'Equipment Borrower’s Agreement', short:'Equipment borrower’s agreement', when:'Another contractor borrows an I-5 lift', filed:0, group:'other',
+    sections:[
+      {h:'Before lending', fields:[{t:'text', l:'Borrower (subcontractor company)', ph:'Company name', sample:'[Subcontractor]'},{t:'text', l:'Job site', v:()=>'Table Mountain · 5302-1'},{t:'area', l:'Equipment description and value', sample:'[Scissor lift · value]'},{t:'photo', l:'Photos of the equipment and any existing damage'},{t:'info', l:'Borrower holds I-5 harmless, covers damage, and provides inland marine and GL certificates naming I-5.'}]},
+      {h:'Return (fill in later)', fields:[{t:'text', l:'Date and time returned', ph:'When it comes back'},{t:'area', l:'Noted damage', ph:'Photos and how it happened'}]}],
+    signs:[['Borrower or authorized rep','other'],['I-5 superintendent','lead']]}
+};
+const GROUPS = [['today','Today'],['equip','Equipment'],['travel','Travel'],['team','Team · leads'],['other','Other']];
+function liftAI(){
+  const c = curTask(), t = (c && /lift|set middle|valance|level|frame/i.test(c.t)) ? c : {d:'D4', t:'Set middle frame'};
+  const what = t.d+' '+t.t.toLowerCase().replace('set ','').replace('lift and level ','');
+  return { id:'5302-1 · '+t.d+' · '+t.t,
+    wt:'[### lbs] per section · from the 5302-1 packing list',
+    mach:'Forklift [unit] · [capacity] lbs · inspected today',
+    qty:'2',
+    acc:'Lifting straps, 2 shackles, chainfall',
+    haz:'Guests and staff walking past the bar. Finished ceilings and lights overhead. Pinch points where the '+t.d+' frame meets the wall.',
+    chk:'Lift 6 in. and hold. Check level and balance. Move slowly to the wall with guide lines. Set on horses before fastening.',
+    roles:'Mike: lead, authorizes the lift. Shaun: signal person. Raul and Brogan: guide lines. Michael: spotter at the walkway. DeMarco: forklift.',
+    exit:'Lower onto the horses and step back to the walkway',
+    sig:'Two short whistles, or "All stop"' };
+}
+const freshForm = () => ({a:{}, sg:{}, ed:{}, done:false, sending:false, at:null, drafted:false, drafting:false});
+function draftForm(k){ const st=F(k); if(st.drafted||st.drafting) return; st.drafting=true; renderForm();
+  setTimeout(()=>{ st.drafting=false; st.drafted=true; fieldsOf(k).forEach(([id,f])=>{ if(f.ai) st.a[id]=(typeof f.ai==='function'?f.ai():f.ai); }); if(curForm===k) renderForm(); renderForms(); }, 1500); }
+
+const F = k => { S.f = S.f || {}; return (S.f[k] = S.f[k] || freshForm()); };
+let curForm = 'lift';
+function fieldsOf(k){ const out=[]; FORMS[k].sections.forEach((s,si)=>s.fields.forEach((f,fi)=>out.push([si+'-'+fi, f]))); return out; }
+function signer(w){ return w==='me' ? FULL[me()] : w==='lead' ? 'Mike Williams' : 'Borrower'; }
+function needs(k){ const st=F(k); let need=0, have=0;
+  fieldsOf(k).forEach(([id,f])=>{ if(f.t==='yn'||f.t==='ck'||f.t==='choice'||(f.t==='photo'&&FORMS[k].draft)){ need++; if(st.a[id]!=null) have++; } });
+  FORMS[k].signs.forEach((s,i)=>{ need++; if(st.sg[i]) have++; });
+  fieldsOf(k).forEach(([id,f])=>{ if(f.t==='signin'){ need++; if((st.a[id]||[]).length>=TEAM.length) have++; } });
+  return [have, need]; }
+function fieldHTML(k, id, f){
+  const st = F(k), v = st.a[id], lock = st.done ? 'disabled' : '';
+  if(f.t==='yn') return `<div class="fq"><span>${f.l}</span><span class="yn"><button data-f="${id}" data-v="yes" class="${v==='yes'?'on':''}" ${lock}>Yes</button><button data-f="${id}" data-v="no" class="${v==='no'?'on no':''}" ${lock}>No</button></span></div>${v==='no'?`<div class="fq" style="padding-top:0"><input class="field" placeholder="What's wrong? (goes in Comments)" aria-label="Comment"></div>`:''}`;
+  if(f.t==='ck') return `<button class="chk ${v?'on':''}" data-f="${id}" data-v="ck" ${lock}><span class="box">✓</span><span>${f.l}</span></button>`;
+  if(f.t==='text'){ const val = v!=null ? v : (f.v ? f.v() : ''); return `<label class="fq col"><small>${f.l}${f.v?' · filled in':''}${f.ai&&st.drafted?(st.ed&&st.ed[id]?' <span class="aitag ed">Edited</span>':' <span class="aitag">✦ AI draft</span>'):''}</small><input class="field" data-ft="${id}" value="${String(val).replace(/"/g,'&quot;')}" placeholder="${f.ph||f.sample||''}" ${lock}></label>`; }
+  if(f.t==='area') return `<label class="fq col"><small>${f.l}${f.ai&&st.drafted?(st.ed&&st.ed[id]?' <span class="aitag ed">Edited</span>':' <span class="aitag">✦ AI draft</span>'):''}</small><textarea class="field" data-ft="${id}" rows="${f.ai?4:2}" placeholder="${f.sample||''}" ${lock}>${v||''}</textarea><span class="mic">Tap the mic to talk instead of type</span></label>`;
+  if(f.t==='people'){ const sel = v || TEAM; return `<div class="fq col"><small>${f.l} · ${sel.length} of ${TEAM.length} checked</small>${TEAM.map(n=>`<button class="chk ${sel.includes(n)?'on':''}" data-f="${id}" data-v="p:${n}" ${lock} style="padding:0 2px"><span class="box">✓</span><span>${FULL[n]}</span><em>${sel.includes(n)?'Included':'Not included'}</em></button>`).join('')}</div>`; }
+  if(f.t==='signin'){ const got = v || []; return `<div class="fq col"><small>${f.l} · ${got.length} of ${TEAM.length} signed · each person signs on their own phone</small>${TEAM.map(n=>`<button class="chk ${got.includes(n)?'on':''}" data-f="${id}" data-v="s:${n}" ${lock}><span class="box">✓</span><span>${FULL[n]}<small style="display:block;font-size:12px;color:var(--sub)">I-5 · in ${n===me()?'9:58':'10:0'+(TEAM.indexOf(n)%6)} AM from Paychex${f.orient?' · orientation Y':''}</small></span><em>${got.includes(n)?'Signed':'Waiting'}</em></button>`).join('')}</div>`; }
+  if(f.t==='choice') return `<div class="fq col"><small>${f.l}</small><span class="chipset">${f.opts.map((o,i)=>`<button data-f="${id}" data-v="c:${o}" class="${v===o?(i?'on no':'on'):''}" ${lock}>${o}</button>`).join('')}</span></div>`;
+  if(f.t==='photo') return `<div class="fq"><button class="soft" style="width:100%;background:var(--tint);color:var(--accent)" data-f="${id}" data-v="photo" ${lock}>${v?'✓ 2 photos attached':'+ '+f.l}</button></div>`;
+  if(f.t==='info') return `<div class="fq"><span style="font-size:14px;color:var(--sub)">${f.l}</span></div>`;
+  return '';
+}
+function renderForm(){
+  const k = curForm, d = FORMS[k], st = F(k), [have, need] = needs(k), ready = have>=need;
+  $('#formEyebrow').textContent = 'TM · 5302-1 · PROCORE FORM';
+  $('#formTitle').textContent = d.short.charAt(0).toUpperCase()+d.short.slice(1);
+  $('#formSub').textContent = d.name + (d.when ? ' · ' + d.when : '');
+  $('#formPill').className = 'pill ' + (st.done ? 'p-ok' : (k==='lift' ? 'p-red' : 'p-blue'));
+  $('#formPill').textContent = st.done ? 'In Procore' : (k==='lift' ? 'Required' : have+' of '+need);
+  if(d.draft && !st.drafted && !st.done){ if(!st.drafting) setTimeout(()=>draftForm(k),0);
+    $('#formBody').innerHTML = `<div class="card aicard"><span class="eyebrow" style="color:var(--accent)">✦ AI IS DRAFTING THIS FOR YOU</span><span style="font-size:15px">Reading ${d.draftSrc || "today's Trello tasks, the lift plan, the crew on the calendar and your 150 past TM safety assessments"}…</span><span class="shim"></span><span class="shim" style="width:80%"></span><span class="shim" style="width:60%"></span></div>`;
+  } else {
+  $('#formBody').innerHTML = (d.draft && st.drafted && !st.done ? `<div class="card aicard"><div style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow" style="color:var(--accent)">✦ DRAFTED BY AI · PLEASE REVIEW</span><button class="link" id="redraft">Redo</button></div><span style="font-size:14px;color:var(--sub)">${d.draftNote || `From what you're working on (${curTask()?curTask().d+' · '+curTask().t:'today'}), the lift plan and how your crews wrote past TM assessments. Fix anything that's off, add a photo, check the box and submit.`}</span></div>` : '') + d.sections.map((s,si)=>{
+    const ids = s.fields.map((f,fi)=>[si+'-'+fi,f]);
+    const bulk = ids.filter(([,f])=>f.t==='yn'||f.t==='ck').length > 2 && !st.done;
+    return `${s.h?`<div class="group-h" style="padding:6px 6px 0"><span class="eyebrow">${s.h.toUpperCase()}</span>${bulk?`<button class="link" data-allyes="${si}">All yes</button>`:''}</div>`:''}<div class="rows fsec">${ids.map(([id,f])=>fieldHTML(k,id,f)).join('')}</div>`;
+  }).join('') + (d.signs.length ? `<span class="eyebrow" style="padding:6px 6px 0">SIGN</span>` + d.signs.map(([lab,w],i)=>`<button class="sign ${st.sg[i]?'on':''}" data-sign="${i}" ${st.done?'disabled':''}>${st.sg[i]?`<span class="sig">${signer(w)}</span><span style="font-size:12px;color:var(--sub)">${lab} · 10:12 AM</span>`:`<span>${lab}</span><span style="font-size:13px;font-weight:500">${w==='lead'&&me()!=='Mike'?'Sends to Mike to sign on his phone':w==='other'?'Hand them the phone to sign':'Tap to sign · '+signer(w)}</span>`}</button>`).join('') : '');
+  }
+  const btn = $('#submitForm');
+  btn.textContent = st.done ? 'Uploaded to Procore ✓' : st.sending ? 'Uploading to Procore…' : 'Submit to Procore';
+  btn.classList.toggle('sent', st.done); btn.style.opacity = (ready||st.done) ? 1 : .45;
+  $('#formFoot').innerHTML = st.done ? `${d.name} · TM project · Forms · ${st.at}` : (ready ? 'Ready. Posts to the TM project in Procore as the filled-in PDF, with photos.' : `${need-have} left to answer. Saves as you go and works offline.`);
+  $('#formApi').textContent = `POST /rest/v1.0/projects/3425837/forms · form_template_id ${d.tid}`;
+}
+function statusPill(k){ const st=F(k), [h,n]=needs(k);
+  if(st.done) return `<span class="pill p-ok">In Procore</span>`;
+  if(k==='lift') return `<span class="pill p-red">Now</span>`;
+  if(k==='assess'||k==='daily') return `<span class="pill p-amber">${h? h+' of '+n : 'To do'}</span>`;
+  return `<span class="pill p-blue">${h? h+' of '+n : 'Start'}</span>`; }
+function renderForms(){
+  $('#formGroups').innerHTML = GROUPS.map(([g,lab])=>{
+    const ks = Object.keys(FORMS).filter(k=>FORMS[k].group===g);
+    if(g==='team' && S.role!=='lead') return '';
+    return `<span class="eyebrow" style="padding:6px 6px 0">${lab.toUpperCase()}</span><div class="rows">${ks.map(k=>`<button class="frow" data-form="${k}" id="row-${k}"><span><b>${FORMS[k].short.charAt(0).toUpperCase()+FORMS[k].short.slice(1)}</b><small>${F(k).done?'Filed '+F(k).at:FORMS[k].when}${FORMS[k].filed?' · '+FORMS[k].filed+' on TM':''}</small></span>${statusPill(k)}</button>`).join('')}</div>`;
+  }).join('');
+  S.liftDone = F('lift').done;
+  const sa = F('assess').done;
+  $('#safSubCrew').textContent = sa ? 'All forms in' : 'Safety assessment';
+  if(document.getElementById('formBody') && S.screen==='form') renderForm();
+}
+function openForm(k){ curForm = k; renderForm(); go('form'); }
+phone.addEventListener('click', e => {
+  const o = e.target.closest('[data-form]'); if(o){ openForm(o.dataset.form); return; }
+  const st = F(curForm); if(st.done) return;
+  if(e.target.closest('#redraft')){ st.drafted=false; st.ed={}; fieldsOf(curForm).forEach(([id,f])=>{ if(f.ai) delete st.a[id]; }); draftForm(curForm); return; }
+  const ay = e.target.closest('[data-allyes]');
+  if(ay){ FORMS[curForm].sections[+ay.dataset.allyes].fields.forEach((f,fi)=>{ const id=ay.dataset.allyes+'-'+fi; if(f.t==='yn') st.a[id]='yes'; if(f.t==='ck') st.a[id]=true; }); renderForm(); renderForms(); return; }
+  const sg = e.target.closest('[data-sign]'); if(sg){ st.sg[+sg.dataset.sign] = !st.sg[+sg.dataset.sign]; renderForm(); return; }
+  const b = e.target.closest('[data-f]'); if(!b) return;
+  const id = b.dataset.f, v = b.dataset.v;
+  if(v==='yes'||v==='no') st.a[id] = st.a[id]===v ? null : v;
+  else if(v==='ck') st.a[id] = !st.a[id] || null;
+  else if(v==='photo') st.a[id] = true;
+  else if(v.startsWith('c:')) st.a[id] = v.slice(2);
+  else if(v.startsWith('p:')){ const n=v.slice(2), cur=(st.a[id]||TEAM).slice(); st.a[id] = cur.includes(n) ? cur.filter(x=>x!==n) : cur.concat(n); }
+  else if(v.startsWith('s:')){ const n=v.slice(2), cur=(st.a[id]||[]).slice(); st.a[id] = cur.includes(n) ? cur.filter(x=>x!==n) : cur.concat(n); }
+  renderForm(); renderForms();
+});
+phone.addEventListener('input', e => { const t = e.target.closest('[data-ft]'); if(t){ const st=F(curForm); st.a[t.dataset.ft] = t.value; if(st.drafted && !st.ed[t.dataset.ft]){ st.ed[t.dataset.ft]=true; const tag=t.closest('.fq').querySelector('.aitag'); if(tag){ tag.textContent='Edited'; tag.classList.add('ed'); } } } });
+function autoFill(k, ms, done){
+  const st = F(k), steps = [];
+  fieldsOf(k).forEach(([id,f])=>{
+    if(f.t==='yn') steps.push(()=>st.a[id]='yes');
+    else if(f.t==='ck') steps.push(()=>st.a[id]=true);
+    else if(f.t==='choice') steps.push(()=>st.a[id]=f.opts[0]);
+    else if((f.t==='text'||f.t==='area') && f.sample && !f.v) steps.push(()=>st.a[id]=f.sample);
+    else if(f.t==='photo') steps.push(()=>st.a[id]=true);
+    else if(f.t==='signin') steps.push(()=>st.a[id]=TEAM.slice());
+  });
+  FORMS[k].signs.forEach((s,i)=>steps.push(()=>{ st.sg[i]=true; }));
+  steps.forEach((fn,i)=>later(()=>{ fn(); renderForm(); const last=[...document.querySelectorAll('#formBody .on, #formBody textarea, #formBody .sign.on')].pop(); if(last) last.scrollIntoView({block:'center',behavior:'smooth'}); }, i*ms));
+  later(()=>{ if(done) done(); }, steps.length*ms + 200);
+}
+function submitForm(){
+  const k = curForm, st = F(k); if(st.done || st.sending) return;
+  const [h,n] = needs(k); if(h<n){ toast((n-h)+' left to answer before you can submit'); return; }
+  st.sending = true; renderForm();
+  $('#upbar').style.display = 'block'; $('#upfill').style.width = '0';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ $('#upfill').style.width = '100%'; }));
+  setTimeout(()=>{ st.sending=false; st.done=true; st.at = k==='lift'?'10:14 AM':'10:2'+Object.keys(FORMS).indexOf(k)+' AM'; $('#upbar').style.display='none'; render(); renderForm(); toast(FORMS[k].short.charAt(0).toUpperCase()+FORMS[k].short.slice(1)+' uploaded to Procore · TM'); }, 1200);
+  setTimeout(()=>{ if(S.screen==='form'){ if(k==='lift'){ go('home'); $('#liftAlert').classList.add('flash'); setTimeout(()=>$('#liftAlert').classList.remove('flash'),700); } else go('safety'); } }, 2300);
+}
+$('#submitForm').addEventListener('click', submitForm);
+
+function zoomCall(){ if(S.zoomSent){ toast('Already sent. Todd replied: "Calling you in 5."'); return; } S.zoomSent = true; render(); toast('"Can we zoom call?" sent to Todd and Dan with TM · '+(curTask()?curTask().d+' · '+curTask().t:'')); }
+$$('.zoomTile').forEach(b => b.addEventListener('click', zoomCall));
+function markDone(){ const qi = curIdx('crew'); if(qi===undefined) return; S.tasks[qi].done = true; S.since.push(S.tasks[qi].d+' · '+S.tasks[qi].t); S.cur.crew = null; S.crewI++; resetDraft(); render(); $('#crewHero').classList.add('flash'); setTimeout(()=>$('#crewHero').classList.remove('flash'),700); toast('Marked done. It counts toward Mike\'s next update.'); }
+const TEN = 10*3600*1000;
+function tenHrsAny(){ const pl = S.punch[S.role==='lead'?'lead':'crew']; return pl && pl.at && (Date.now()-pl.at) >= TEN; }
+function tenHrs(){ const pl = S.punch.lead; return S.role==='lead' && pl && pl.at && (Date.now()-pl.at) >= TEN; }
+function renderPlanTile(){ const t = tenHrs(); $('#tUpdate').style.display = t ? 'none' : ''; $('#tPlan').style.display = t ? '' : 'none';
+  $('#planBadge').textContent = S.plan ? 'Posted' : '10 hrs'; $('#planSub').textContent = S.plan ? 'Crew see it after wrap up' : 'Start time + tasks'; }
+setInterval(()=>{ const was = $('#tPlan').style.display!=='none'; renderPlanTile(); if(!was && tenHrs() && !S.plan && !playing) notify('10 hours on the clock','Tap to plan tomorrow for your crew',()=>go('plan')); }, 30000);
+const FLY = {out:'[AS 0000] · Mon, Oct 19 · 7:10 AM · [PDX] → [Airport]', back:'[AS 0000] · Fri, Oct 23 · 6:45 PM · [Airport] → [PDX]'};
+const TRIPCREW = ['Shaun','Michael','DeMarco','Raul','Brogan'];
+function flightBox(){ return `<div class="flybox"><div><small>OUT</small>${FLY.out}</div><div><small>HOME</small>${FLY.back}</div></div>`; }
+function renderBook(){
+  const c = $('#bookCard'); if(!c) return;
+  const head = (pill, cls) => `<div style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow">NEXT TRIP · MON, OCT 19</span><span class="pill ${cls}">${pill}</span></div><b style="font-family:var(--display);font-size:18px">Fly to [next job]</b>`;
+  const auto = S.autoMatch!==false;
+  const autoRow = `<button class="chk ${auto?'on':''}" id="autoMatch" style="padding:0 2px;border:0"><span class="box">✓</span><span>Match the crew to my flights<small style="display:block;font-size:12px;color:var(--sub)">Shaun, Michael, DeMarco, Raul and Brogan get booked on the same flights automatically</small></span></button>`;
+  if(S.role==='lead'){
+    if(!S.booked){ c.innerHTML = head('Not booked','p-amber') + `<div class="kv"><div><span>From</span>[PDX]</div><div><span>To</span>[Airport]</div><div><span>Fly out</span>Mon, Oct 19 · morning</div><div><span>Fly home</span>Fri, Oct 23 · after work</div></div>` + autoRow + `<button class="cta" data-findfl="1">Find flights</button><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="soft" style="background:var(--field)" id="scanBtn">Scan a screenshot</button><button class="soft" style="background:var(--field)" data-toast="Your trip dates go to April to book for you">Ask April to book</button></div>`; return; }
+    const got = TRIPCREW.filter(n=>S.crewBooked[n]).length;
+    c.innerHTML = head(S.shared ? got+' of '+TRIPCREW.length+' crew booked' : 'You\'re booked', S.shared && got===TRIPCREW.length ? 'p-ok' : S.shared ? 'p-blue' : 'p-ok') + flightBox() +
+      (S.shared ? `<span class="eyebrow" style="padding-top:4px">YOUR CREW ON THESE FLIGHTS</span><div class="rows" style="background:var(--field)">${TRIPCREW.map(n=>`<div class="trow" style="min-height:44px"><span style="flex:1">${FULL[n]}</span><span class="pill ${S.crewBooked[n]?'p-ok':'p-amber'}">${S.crewBooked[n]?(S.autoBooked?'Matched ✓':'Booked ✓'):'Not yet'}</span></div>`).join('')}</div>${got<TRIPCREW.length?`<button class="soft" style="background:var(--tint);color:var(--accent)" id="remindBtn">Remind the ${TRIPCREW.length-got} not booked</button>`:''}`
+        : `<button class="cta" id="shareBtn">Match the crew to these flights</button><span style="font-size:13px;color:var(--sub);text-align:center">Books Shaun, Michael, DeMarco, Raul and Brogan on the same flights.</span>`)
+      + `<button class="soft" style="background:var(--field)" data-findfl="1">Change flights</button>`;
+    return;
+  }
+  // crew
+  if(!S.shared){ c.innerHTML = head('Waiting on Mike','p-blue') + `<span style="font-size:14px;color:var(--sub)">When Mike books, you're put on the same flights automatically. Nothing to do.</span><button class="soft" style="background:var(--field)" data-findfl="1">Find my own flight</button>`; return; }
+  const mine = S.crewBooked[CREW];
+  c.innerHTML = head(mine ? 'Booked' : 'Book this flight', mine ? 'p-ok' : 'p-amber') + `<span style="font-size:14px;color:var(--sub)">${mine && S.autoBooked ? '<b style="color:var(--ink)">Matched to Mike\'s flights</b> automatically · 8:05 PM' : '<b style="color:var(--ink)">Mike</b> picked this flight for the crew · 8:05 PM'}</span>` + flightBox() +
+    (mine ? `<span style="font-size:13px;color:var(--okInk);font-weight:600">You're booked · Conf [######] · on your schedule</span><button class="soft" style="background:var(--field)" data-toast="Sends Mike a note that you need a different flight">Need a different flight?</button>` : `<button class="cta" id="bookSame">Book the same flights</button><span style="font-size:13px;color:var(--sub);text-align:center">One tap. Booked on the I-5 travel account. Mike sees when you're booked.</span>`);
+}
+
+// ---------- Scrum day rhythm: Mobilize -> 2-hr blocks with check-ins -> Pre-lunch -> EOD ----------
+const BLOCKS = [['10:00 AM','12:00 PM'],['12:00 PM','2:00 PM'],['2:00 PM','4:00 PM'],['4:00 PM','6:00 PM'],['6:00 PM','8:00 PM']];
+function ciLabel(){ return 'Check in · '+BLOCKS[Math.min(S.block,BLOCKS.length-1)][1].replace(':00','').replace(' PM',' PM'); }
+const MOB = [['punch','Punch in','Paychex Flex'],['vibe','Meet at the Vibe Board, review teams in Trello','2 min'],['draw','Drawing review with your team','10 min'],['clarify','Back at the Vibe Board, clarify tasks with Mike','5–10 min'],['assess','Safety assessment in Procore','Opens the form'],['stage','Unload and stage the Mobilize card items',''],['setup','Set up work areas, carts and lift bins','Then safely crank on your tasks']];
+const LUNCH = r => [['stop','Safe stopping point','Within 10 min of the call'],['debris','Remove debris and organize your area','5 min'],['together','The whole team leaves together',''],['back','Back from lunch: walk in together to the Vibe Board','']];
+const EOD_MINE = {
+  Mike:[['trello','Confirm with the install manager, then Zoom start time and first task for everyone','Easy plan tomorrow']],
+  DeMarco:[['lift','Clean and charge the lift','Your EOD task']],
+  Raul:[['cartsx','Organize the work carts','Your EOD task']],
+  Brogan:[['batt','Charge batteries and radios','Your EOD task']]
+};
+const EOD_ALL = [['stop','Safe stopping point, set up for tomorrow','Note supplies, tools or rentals needed'],['detail','Take one close detail photo','A structural connection, wiring, a bolted seam'],['ptools','Personal tools away, company tools to the job box',''],['lifts','Lifts to the charging area',''],['ladders','Ladders and work carts to staging',''],['trash','All trash into the bins',''],['vibeeod','Vibe Board: Trello status, anything to order','Order requests go to the install manager in the app'],['walk','Obvious walk, fix anything that looks bad','10 min'],['like','Read and like tomorrow\'s Zoom message','At the vehicles']];
+const THE_DAY = r => (r==='lead' ? [['Inspect layout before drilling','Also structural attachments, electrical and plumb/level']] : []).concat([['New work area? New safety assessment','Safety tile › Safety assessment'],['Radio Mike 15 min before you finish','Tap 15 min left. He lines up your next area'],['Vibe Board every 2–3 hours','Check-in updates Trello for you']]);
+const DEMOB = [['dm1','Remove install materials and tools, prep the featherlite',''],['dm2','Call off rental equipment',''],['dm3','Detail clean the jobsite for Matterport',''],['dm4','Matterport scan',''],['dm5','Empty and call off trailers',''],['dm6','Organize trailers and storage, update the collaboration sheet',''],['dm7','Obvious walk the whole project and staging area',''],['dm8','Final walkthrough with the site super','Lead']];
+const who = () => S.role==='lead' ? 'Mike' : 'Raul';
+function rtDone(key){ const k = who()+':'+key; if(key==='punch') return S.punch[S.role==='lead'?'lead':'crew'].st!=='out'; if(key==='assess') return F('assess').done; return !!S.rt[k]; }
+function rtRows(items, sec){ return items.map(([k,l,sub])=>`<button class="chk ${rtDone(k)?'on':''}" data-rt="${k}" data-sec="${sec}"><span class="box">✓</span><span>${l}${sub?`<small style="display:block;font-size:12px;color:var(--sub)">${sub}</small>`:''}</span><em>${k==='assess'&&!rtDone(k)?'Open':k==='punch'?(rtDone(k)?'Auto':'Clock in'):''}</em></button>`).join(''); }
+function eodItems(){ return (EOD_MINE[who()]||[]).concat(EOD_ALL); }
+function count(items){ return [items.filter(([k])=>rtDone(k)).length, items.length]; }
+function renderRoutine(){
+  const r = S.role==='lead'?'lead':'crew';
+  $('#rtWho').textContent = who().toUpperCase()+' · TM · FRI, OCT 9 · DAILY SOP';
+  const sec = (id,title,sub,items,cur) => { const [h,n]=count(items); return `<div class="group-h" style="padding:6px 6px 0"><span class="eyebrow">${title}</span><span class="pill ${h===n?'p-ok':cur?'p-amber':'p-blue'}">${h} of ${n}</span></div>${sub?`<span style="font-size:13px;color:var(--sub);padding:0 6px">${sub}</span>`:''}<div class="rows fsec">${rtRows(items,id)}</div>`; };
+  const mine = EOD_MINE[who()]||[];
+  $('#rtBody').innerHTML = sec('mob','MOBILIZATION','Start of the day',MOB,S.phase==='mob')
+    + sec('lunch','LUNCH BREAK','',LUNCH(r),S.phase==='lunch')
+    + `<div class="group-h" style="padding:6px 6px 0"><span class="eyebrow">END OF DAY</span><span class="pill ${S.phase==='eod'?'p-amber':'p-blue'}">${count(eodItems())[0]} of ${eodItems().length}</span></div><span style="font-size:13px;color:var(--sub);padding:0 6px">${mine.length?'Your job, then everyone\'s':'Everyone\'s list'}</span><div class="rows fsec">${rtRows(mine,'eod')}${rtRows(EOD_ALL,'eod')}</div><button class="soft" data-go="eod" style="background:var(--tint);color:var(--accent)">EOD email and clock out</button>`
+    + (S.lastDay ? sec('demob','DEMOBILIZE','Last onsite day · replaces EOD',DEMOB,true) : '');
+  // EOD screen list
+  const ei = eodItems(), [eh,en] = count(ei);
+  $('#eodRt').innerHTML = rtRows(ei,'eod'); $('#eodRtPill').textContent = eh+' of '+en; $('#eodRtPill').className = 'pill '+(eh===en?'p-ok':'p-blue');
+  // home strips
+  ['phaseLead','phaseCrew'].forEach(id=>{ const el = $('#'+id); let cls='phase', html='';
+    if(S.phase==='mob'){ const [h,n]=count(MOB); cls+=' mob'; html=`<span class="ring">${h}/${n}</span><span><b>Mobilize</b> <span class="sub">· ${n-h} left</span></span><span class="go">›</span>`; el.dataset.go='routine'; }
+    else if(S.phase==='lunch'){ const it=LUNCH(r), [h,n]=count(it); cls+=' mob'; html=`<span class="ring">${h}/${n}</span><span><b>Pre-lunch</b> <span class="sub">· plug in lifts and radios</span></span><span class="go">›</span>`; el.dataset.go='routine'; }
+    else if(S.phase==='eod'){ const [h,n]=count(eodItems()); cls+=' eodp'; html=`<span class="ring">${h}/${n}</span><span><b>Wrap up</b> <span class="sub">· ${(EOD_MINE[who()]||[]).length?(EOD_MINE[who()][0][1]):'your EOD list'}</span></span><span class="go">›</span>`; el.dataset.go='eod'; }
+    else { html=`<span class="ring" style="background:var(--tint);color:var(--accent)">${S.block+1}</span><span><b>Heads down</b> <span class="sub">· next check-in ${BLOCKS[Math.min(S.block,4)][1]}</span></span><span class="go">›</span>`; el.dataset.go='checkin'; }
+    el.className = cls; el.innerHTML = html; });
+  if(S.phase==='mob' && count(MOB)[0]===MOB.length){ S.phase='work'; setTimeout(render,0); }
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-rt]'); if(!b) return; const k = b.dataset.rt;
+  if(k==='assess'){ if(!F('assess').done) openForm('assess'); return; }
+  if(k==='punch'){ if(!rtDone('punch')) punchAct('in'); return; }
+  if(k==='trello'){ go('plan'); return; }
+  S.rt[who()+':'+k] = !S.rt[who()+':'+k]; render(); });
+
+function ciState(){ return S.ci[S.role==='lead'?'lead':'crew']; }
+function ciTasks(){ const me = who(), c = curIdx(); const mine = S.tasks.map((t,i)=>i).filter(i=>!S.tasks[i].done && (S.tasks[i].who===me || i===c) && !S.tasks[i].blocked); if(c!==undefined && !mine.includes(c)) mine.unshift(c); return mine.sort((a,b)=>(a===c?-1:b===c?1:0)); }
+function renderCheckin(){
+  const st = ciState(), c = curIdx(), [b0,b1] = BLOCKS[Math.min(S.block,4)];
+  $('#ciBlock').textContent = 'TM · '+b0+' – '+b1;
+  const list = ciTasks();
+  $('#ciDone').innerHTML = list.map(i=>{ const t=S.tasks[i], v=st.a[i]; return `<div class="cirow"><span><b>${t.d}</b> · ${t.t}<small>${i===c?'What you were working on':t.who===who()?'Yours':t.who}</small></span><span class="yn"><button data-ci="${i}" data-v="done" class="${v==='done'?'on':''}">Done</button><button data-ci="${i}" data-v="going" class="${v==='going'?'on':''}" style="min-width:72px">Still going</button></span></div>`; }).join('') || '<div class="cirow">Nothing open</div>';
+  const open = S.tasks.map((t,i)=>i).filter(i=>!S.tasks[i].done && st.a[i]!=='done' && !S.tasks[i].blocked);
+  const mineFirst = open.filter(i=>S.tasks[i].who===who()).concat(open.filter(i=>S.tasks[i].who!==who()));
+  if(st.next==null || !open.includes(st.next)) st.next = (st.a[c]==='going' && open.includes(c)) ? c : mineFirst[0];
+  $('#ciNext').innerHTML = mineFirst.slice(0,5).map(i=>{ const t=S.tasks[i]; return `<button class="chk ${st.next===i?'on':''}" data-cin="${i}"><span class="box">✓</span><span><b style="font-family:var(--display)">${t.d}</b> · ${t.t}<small style="display:block;font-size:12px;color:var(--sub)">${t.who===who()?'Yours':'Help '+t.who}</small></span><em>${st.next===i?'Next up':''}</em></button>`; }).join('');
+  $$('#ciBlockers button').forEach(b=>b.classList.toggle('on', st.blk.includes(b.dataset.blk)));
+  const ready = list.every(i=>st.a[i]);
+  $('#ciSend').style.opacity = ready ? 1 : .45;
+  $('#ciSend').textContent = 'Update Trello';
+  $('#ciFoot').textContent = ready ? (S.role==='lead' ? 'Moves the cards, then opens your 2-hr update for Todd.' : 'Moves your cards on the TM board. Mike\'s 2-hr update uses this.') : 'Tap Done or Still going for each one.';
+}
+document.addEventListener('click', e => {
+  const st = ciState();
+  const a = e.target.closest('[data-ci]'); if(a){ st.a[+a.dataset.ci] = a.dataset.v; renderCheckin(); return; }
+  const n = e.target.closest('[data-cin]'); if(n){ st.next = +n.dataset.cin; renderCheckin(); return; }
+  const bl = e.target.closest('[data-blk]'); if(bl){ const k = bl.dataset.blk; st.blk = st.blk.includes(k) ? st.blk.filter(x=>x!==k) : st.blk.concat(k); renderCheckin(); return; }
+});
+function sendCheckin(){
+  const st = ciState(), list = ciTasks();
+  if(!list.every(i=>st.a[i])){ toast('Tap Done or Still going for each one'); return; }
+  const done = list.filter(i=>st.a[i]==='done');
+  done.forEach(i=>{ S.tasks[i].done = true; S.since.push(S.tasks[i].d+' · '+S.tasks[i].t); });
+  const r = S.role==='lead'?'lead':'crew'; S.cur[r] = st.next; resetDraft();
+  const nt = S.tasks[st.next];
+  toast('Trello updated: '+(done.length? done.length+' card'+(done.length>1?'s':'')+' to Done, ':'')+(nt? nt.d+' to Doing':'')+(st.blk.length?'. '+st.blk.join(', ')+' sent to Todd and Dan':''));
+  S.ci[r] = {a:{}, next:null, blk:[], sent:(st.sent||0)+1};
+  if(S.role==='lead'){ render(); setTimeout(()=>go('update'), 1200); }
+  else { S.block = Math.min(S.block+1, 4); render(); setTimeout(()=>{ go('home'); $('#crewHero').classList.add('flash'); setTimeout(()=>$('#crewHero').classList.remove('flash'),700); }, 1200); }
+}
+$('#ciSend').addEventListener('click', sendCheckin);
+
+
+// ---------- simple home: one card that shows the one thing to do now ----------
+function stageFor(r){ const pu = S.punch[r]; if(pu.st==='out') return 'clock'; if(S.phase==='mob') return 'mob'; if(S.phase==='eod') return 'eod'; return 'work'; }
+function renderNow(){
+  const r = S.role==='lead'?'lead':'crew';
+  [['heroLead','lead'],['crewHero','crew']].forEach(([id,role])=>{
+    const h = $('#'+id), st = stageFor(role); h.dataset.st = st;
+    const [mh,mn] = count(MOB); const mNext = MOB.find(([k])=>!rtDone(k));
+    h.querySelector('.mobN').textContent = mh+' of '+mn; h.querySelector('.mobNext').textContent = mNext ? mNext[1] : 'All set';
+    const ei = eodItems(), [eh,en] = count(ei), eNext = ei.find(([k])=>!rtDone(k));
+    h.querySelector('.eodN').textContent = eh+' of '+en; h.querySelector('.eodNext').textContent = eNext ? eNext[1] : 'All done. Send it.';
+    h.querySelector('.ciNext').textContent = 'Next check-in '+BLOCKS[Math.min(S.block,4)][1];
+  });
+  const lt = S.tasks[curIdx('lead')]; $('#leadD').textContent = lt ? lt.d : 'Done'; $('#leadT').textContent = lt ? lt.t : 'Your tasks are done';
+  $('#markDone').textContent = 'Check in'; $('#crewLeft').textContent = 'All tasks';
+  [['clkLead','lead'],['clkCrew','crew']].forEach(([id,role])=>{ const pu = S.punch[role], el = $('#'+id);
+    el.className = 'clk' + (pu.st==='in' ? ' on' : '');
+    el.innerHTML = '<i></i>' + (pu.st==='out' ? 'Not clocked in' : pu.st==='in' ? 'On the clock · since '+startLabel[role] : pu.st==='lunch' ? 'On lunch' : 'Clocked out · hours sent'); });
+  const ls = stageFor('lead'); $('#liftAlert').style.display = (ls==='clock'||ls==='eod') ? 'none' : '';
+}
+function openClock(){
+  const pu = S.punch[S.role==='lead'?'lead':'crew'];
+  $('#sheetT').textContent = 'Paychex Flex time clock'; $('#sheetS').textContent = pu.st==='out' ? 'Not clocked in yet' : 'Since '+startLabel[S.role==='lead'?'lead':'crew']+' · sent to Paychex Flex';
+  const b = (a,l,cls) => `<button class="nowbtn ${cls||''}" data-pact="${a}" style="background:${cls?'var(--field)':'var(--btn)'};color:${cls?'var(--ink)':'#fff'};border:0">${l}</button>`;
+  $('#sheetList').innerHTML = pu.st==='out' ? b('in','Clock in') : pu.st==='in' ? b('lunch','Start lunch','g') + b('out','Clock out','g') : pu.st==='lunch' ? b('back','End lunch') : '<span style="color:var(--sub)">Clocked out for today.</span>';
+  $('#sheet').classList.add('show'); $('#sheetBg').classList.add('show');
+}
+document.addEventListener('click', e => {
+  if(e.target.closest('[data-clk]')){ openClock(); return; }
+  const pa = e.target.closest('[data-pact]'); if(pa){ closePicker(); punchAct(pa.dataset.pact); return; }
+  const pi = e.target.closest('[data-punch]'); if(pi){ punchAct('in'); const h = pi.closest('.hero'); if(h){ h.classList.add('flash'); setTimeout(()=>h.classList.remove('flash'),700); } }
+});
+
+
+// ---------- find, pick and book flights in the app (sample results) ----------
+const FL = {
+  out:[{id:'o1',t:'6:00 AM – 8:05 AM',f:'[AS 1101]',st:'Nonstop · 2h 05m',p:189,tag:'Cheapest'},{id:'o2',t:'7:10 AM – 9:15 AM',f:'[AS 1123]',st:'Nonstop · 2h 05m',p:214,tag:'Gets you to site by 10'},{id:'o3',t:'10:40 AM – 1:55 PM',f:'[DL 2290]',st:'1 stop SEA · 3h 15m',p:176,tag:''},{id:'o4',t:'1:15 PM – 3:20 PM',f:'[AS 1149]',st:'Nonstop · 2h 05m',p:229,tag:''}],
+  back:[{id:'b1',t:'4:30 PM – 6:35 PM',f:'[AS 1130]',st:'Nonstop · 2h 05m',p:199,tag:'Leave site by 2:30'},{id:'b2',t:'6:45 PM – 8:50 PM',f:'[AS 1142]',st:'Nonstop · 2h 05m',p:179,tag:'Cheapest'},{id:'b3',t:'8:20 PM – 11:40 PM',f:'[DL 2311]',st:'1 stop SEA · 3h 20m',p:168,tag:''}]
+};
+S.fs = S.fs || {searched:false, leg:'out', out:null, back:null, who:'me', loading:false};
+function fs(){ if(!S.fs) S.fs = {searched:false, leg:'out', out:null, back:null, who:'me', loading:false}; return S.fs; }
+function renderFlights(){
+  const f = fs(), box = $('#fsRes'); if(!box) return;
+  f.who = (S.role==='lead' && S.autoMatch!==false) ? 'crew' : 'me';
+  $('#fsWho').innerHTML = S.role==='lead' ? `<button class="chk ${S.autoMatch!==false?'on':''}" id="autoMatch" style="padding:0 2px;border:0"><span class="box">✓</span><span>Match the crew to my flights<small style="display:block;font-size:12px;color:var(--sub)">The other 5 get booked on whatever you pick</small></span></button>` : '';
+  if(f.loading){ box.innerHTML = `<div class="card" style="gap:8px"><span class="eyebrow" style="color:var(--accent)">SEARCHING FLIGHTS</span><span class="shim"></span><span class="shim" style="width:80%"></span><span class="shim" style="width:60%"></span></div>`; return; }
+  if(!f.searched){ box.innerHTML = ''; return; }
+  const pick = id => [...FL.out,...FL.back].find(x=>x.id===id);
+  const o = pick(f.out), b = pick(f.back), n = f.who==='crew' ? 6 : 1;
+  const list = FL[f.leg].map(x=>`<button class="fl ${f[f.leg]===x.id?'on':''}" data-fl="${x.id}"><span><span class="tm">${x.t}</span><small>${x.f} · ${x.st}</small>${x.tag?`<small style="color:var(--accent);font-weight:700">${x.tag}</small>`:''}</span><span class="pr">$${x.p}<small>In policy ✓</small></span></button>`).join('');
+  box.innerHTML = `<div class="legtab"><button data-leg="out" class="${f.leg==='out'?'on':''}">FLYING OUT<b>Mon, Oct 19${o?' · '+o.t.split(' – ')[0]:''}</b></button><button data-leg="back" class="${f.leg==='back'?'on':''}">FLYING HOME<b>Fri, Oct 23${b?' · '+b.t.split(' – ')[0]:''}</b></button></div>
+    <div class="rows">${list}</div>
+    <span style="font-size:12px;color:var(--sub);padding:0 6px">Sample results · prices per person · I-5 travel policy applied</span>`
+    + (o && b ? `<div class="card" style="gap:8px"><span class="eyebrow">YOUR TRIP</span><div class="flybox"><div><small>OUT · MON, OCT 19</small>${o.f} · ${o.t}</div><div><small>HOME · FRI, OCT 23</small>${b.f} · ${b.t}</div></div><div style="display:flex;justify-content:space-between;font-size:15px"><span>${n===1?'1 traveler':'You + 5 crew, same flights'}</span><b>$${(o.p+b.p)*n}</b></div><button class="cta" id="fsBook">${n===1?'Book it':'Book me and match the crew'}</button><span style="font-size:12px;color:var(--sub);text-align:center">Booked on the I-5 company travel account. Confirmation lands in your Travel page and schedule.</span></div>` : '');
+}
+function fsSearch(){ const f = fs(); f.loading = true; f.searched = false; renderFlights(); later(()=>{ f.loading=false; f.searched=true; f.leg='out'; renderFlights(); $('#fsRes').scrollIntoView({block:'start',behavior:'smooth'}); }, 1200); }
+function fsBook(){
+  const f = fs(), pick = id => [...FL.out,...FL.back].find(x=>x.id===id), o = pick(f.out), b = pick(f.back);
+  toast('Booking with the travel agency…');
+  later(()=>{
+    FLY.out = `${o.f} · Mon, Oct 19 · ${o.t.split(' – ')[0]} · [PDX] → [Airport]`; FLY.back = `${b.f} · Fri, Oct 23 · ${b.t.split(' – ')[0]} · [Airport] → [PDX]`;
+    if(S.role==='lead'){ S.booked = true; if(f.who==='crew') matchCrew(); }
+    else { S.shared = true; S.crewBooked[CREW] = true; }
+    render(); go('travel'); toast(f.who==='crew' ? 'Booked. All 5 crew matched to your flights and notified.' : 'Booked. Confirmation is on your Travel page.');
+  }, 1600);
+}
+document.addEventListener('click', e => {
+  const f = fs();
+  if(e.target.closest('#fsGo')){ fsSearch(); return; }
+  if(e.target.closest('#fsBook')){ fsBook(); return; }
+  if(e.target.closest('[data-findfl]')){ go('flights'); renderFlights(); return; }
+  const w = e.target.closest('[data-fwho]'); if(w){ f.who = w.dataset.fwho; renderFlights(); return; }
+  const l = e.target.closest('[data-leg]'); if(l){ f.leg = l.dataset.leg; renderFlights(); return; }
+  const x = e.target.closest('[data-fl]'); if(x){ f[f.leg] = x.dataset.fl; if(f.leg==='out' && !f.back) f.leg='back'; renderFlights(); return; }
+});
+
+
+// ---------- iPhone home screen -> launch the app ----------
+function showSpringboard(){ $('#springboard').classList.remove('gone'); $('#springboard').classList.add('pulse'); $('#splash').classList.remove('on'); }
+function launchApp(cb){
+  const sb = $('#springboard'), sp = $('#splash');
+  if(sb.classList.contains('gone')){ if(cb) cb(); return; }
+  sb.classList.remove('pulse'); sp.classList.add('on'); sb.classList.add('gone');
+  setTimeout(()=>{ sp.classList.remove('on'); if(cb) cb(); }, 1300);
+}
+$('#i5Icon').addEventListener('click', ()=>launchApp());
+['#asLead','#asCrew','#mLight','#mDark'].forEach(id=>{ const el=document.querySelector(id); if(el) el.addEventListener('click', ()=>{ $('#springboard').classList.add('gone'); $('#springboard').classList.remove('pulse'); }); });
+
+
+// ---------- SOP extras ----------
+function eodDraft(){
+  const me = who(), done = S.tasks.filter(t=>t.done && t.who===me);
+  const lines = done.map(t=>'• '+t.d+': '+t.t+(rtDone('detail')?' (detail photo attached)':''));
+  (EOD_MINE[me]||[]).forEach(([k,l])=>{ if(rtDone(k)) lines.push('• '+l+'.'); });
+  if(me==='Raul') lines.push('• Spotted for DeMarco unloading décor crates.');
+  if(me==='Mike') lines.push('• Lift plan done before the D4 lift. Confirmed level.');
+  return (lines.length?lines:['• [What you did today]']).join('\n');
+}
+function renderSop(){
+  const m = $('#eodMail'); if(m && !S.eodEdited) m.value = eodDraft();
+  const z = $('#zRow'); if(z){ const lead = S.role==='lead';
+    const b = (k,l)=>`<button class="zbtn ${S.zp&&S.zp[k]?'on':''}" data-zp="${k}">${S.zp&&S.zp[k]?'✓ ':''}${l}</button>`;
+    const seq = lead ? [['gate','Post "At my gate"'],['landed','Post "Landed"'],['onsite','Post "Onsite"'],['house','House is good + photos']] : [['gate','Post "At my gate"'],['house','House is good + photos']];
+    const nx = seq.find(([k])=>!(S.zp&&S.zp[k]));
+    z.innerHTML = nx ? `<button class="zbtn" data-zp="${nx[0]}" style="width:100%;min-height:44px">${nx[1]}</button>` : ''; }
+}
+const ZMSG = {gate:'"At my gate" posted to Installers chat. The crew likes it as they arrive.', landed:'"Landed" posted to Installers chat', onsite:'"Onsite" posted to Installers chat', house:'"House 1 is in good condition" posted. Room photos go to the Procore photo album.', start:'Opens Plan tomorrow to post start time and first tasks'};
+document.addEventListener('click', e => {
+  const zp = e.target.closest('[data-zp]'); if(zp){ const k = zp.dataset.zp; if(k==='start'){ go('plan'); return; } S.zp = S.zp || {}; S.zp[k] = true; render(); toast(ZMSG[k]); return; }
+  if(e.target.closest('#radio15')){ const t = curTask(); S.radio15 = true; render(); toast('Mike knows you\'re 15 min from done on '+(t?t.d:'')+'. He\'ll line up your next area.'); return; }
+});
+document.addEventListener('input', e => { if(e.target.id==='eodMail') S.eodEdited = true; });
+
+function bookTrip(){ if(S.booked){ toast('Opens your itinerary'); return; } toast('Booking…'); later(()=>{ S.booked = true; render(); toast('Booked. Now send it to your crew.'); }, 2000); }
+function scanShot(){ toast('Reading the screenshot…'); later(()=>{ S.booked = true; if(S.autoMatch!==false) matchCrew(); render(); toast(S.autoMatch!==false ? 'Found [AS 0000] Oct 19 and Oct 23. Booked you and matched all 5 crew.' : 'Found [AS 0000] Oct 19 and [AS 0000] Oct 23.'); }, 1600); }
+function matchCrew(){ S.shared = true; S.autoBooked = true; TRIPCREW.forEach(n=>S.crewBooked[n]=true); }
+function shareFlight(){ toast('Booking the crew on your flights…'); later(()=>{ matchCrew(); render(); toast('Done. All 5 crew matched to your flights. They each got a notification.'); }, 1400); }
+function bookSame(){ toast('Booking the same flights…'); later(()=>{ S.crewBooked[CREW] = true; render(); toast('Booked. Mike can see you\'re on the flight.'); }, 2000); }
+document.addEventListener('click', e => {
+  if(e.target.closest('#bookBtn')) bookTrip(); else if(e.target.closest('#scanBtn')) scanShot(); else if(e.target.closest('#shareBtn')) shareFlight(); else if(e.target.closest('#bookSame')) bookSame();
+  else if(e.target.closest('#remindBtn')) toast('Reminder sent to everyone not booked yet');
+  else if(e.target.closest('#autoMatch')){ S.autoMatch = S.autoMatch===false; render(); }
+});
+function renderVeh(){
+  const v = S.veh || 'rental';
+  $$('#vehSeg button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.veh===v)));
+  $('#vehBody').innerHTML = v==='truck'
+    ? `<b style="font-family:var(--display);font-size:17px">I-5 truck · Unit [683_2020] F-150</b><div class="kv"><div><span>Driver</span>Mike</div><div><span>Riding with</span>${S.role==='lead'?'Shaun, Raul':'Mike, Shaun'}</div><div><span>Pick up</span>Shop lot · Lacey</div><div><span>Towing</span>Trailer [ID]</div><div><span>Fuel card</span>Ramp card · check $500+</div><div><span>Parking</span>[Site lot]</div></div><button class="soft" style="background:var(--tint);color:var(--accent)" data-form="trailer">Trailer driving checklist</button>`
+    : `<b style="font-family:var(--display);font-size:17px">[Rental SUV] · [confirmation #]</b><div class="kv"><div><span>Driver</span>Mike</div><div><span>Riding with</span>${S.role==='lead'?'Shaun, Raul':'Mike, Shaun'}</div><div><span>Pick up</span>[Airport counter]</div><div><span>Return</span>Fri, Oct 23 · [airport]</div><div><span>Booked by</span>April · on I-5 card</div><div><span>Trucks</span>F350 + F150 stay at shop</div></div>`;
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-veh]'); if(b){ S.veh = b.dataset.veh; renderVeh(); } });
+function postPlan(){ if(S.plan) return; S.plan = true; render(); toast('Plan posted. Crew see it after they wrap up.'); }
+$('#postPlan').addEventListener('click', postPlan);
+function sendEod(){ const [h,n] = count(eodItems()); if(h<n && !playing){ toast((n-h)+' left on your wrap-up list'); return; } S.eod = true; const k = S.role==='crew'?'crew':'lead'; if(S.punch[k].st!=='out'){ S.punch[k] = {st:'done', at:S.punch[k].at}; } toast('EOD email sent to the install manager and Mr. O\'Connor. Clocked out in Paychex Flex.'); render(); setTimeout(()=>go('home'), 900); }
+$('#sendEod').addEventListener('click', sendEod);
+$('#gotIt').addEventListener('click', ()=> { $('#gotIt').textContent = 'Seen ✓ · Mike can see you got it'; });
+$('#appearRow').addEventListener('click', ()=>{ S.dark = !S.dark; render(); });
+
+const answers = {
+  'When is shipment 16?': 'Shipment #16 is set to deliver Monday, Oct 12. That comes from Kyle\'s notice in the Table Mountain chat. The driver\'s number is in the shipment log.',
+  'Which crate is D4 in?': 'Sample answer: D4 middle frame is in crate [#] on shipment [#], per the 5302-1 packing list, row [#].',
+  'Fastener spec for D1': 'Sample answer: [fastener and spacing from the D1 shop drawing]. Open the sheet in Revizto to check before you drill.'
+};
+function ask(q){
+  if(!q) return;
+  const chat = $('#chat');
+  chat.insertAdjacentHTML('beforeend', `<div class="bubble me"></div>`); chat.lastElementChild.textContent = q;
+  chat.insertAdjacentHTML('beforeend', `<div class="typing" id="typing"><i></i><i></i><i></i></div>`);
+  const sc = $('#s-ask'); sc.scrollTop = sc.scrollHeight;
+  setTimeout(()=>{
+    $('#typing')?.remove();
+    const cm = q.match(/^Which crate is (D\d+) in\?$/), fm = q.match(/^Fastener spec for (D\d+)$/);
+    const a = answers[q] || (cm ? 'Sample answer: '+cm[1]+' sections are in crate [#] on shipment [#], per the 5302-1 packing list, row [#].' : fm ? 'Sample answer: [fastener and spacing from the '+fm[1]+' shop drawing]. Check the sheet in Revizto before you drill.' : null) || 'Sample answer: I\'d check the 5302-1 project sheet and the Revizto drawing for that. Want me to send it to Todd and Dan?';
+    chat.insertAdjacentHTML('beforeend', `<div class="bubble bot"><small>GROK · I-5 DECOR</small><span></span><span style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="chip" style="background:var(--field)" data-toast="Saved as a known fix">That worked</button><button class="chip" style="background:var(--tint);color:var(--accent);font-weight:700" data-toast="Question and answer sent to Todd and Dan">Send to Todd + Dan</button></span></div>`);
+    chat.lastElementChild.children[1].textContent = a;
+    sc.scrollTop = sc.scrollHeight;
+  }, 1100);
+}
+$('#chips').addEventListener('click', e => { const b = e.target.closest('[data-q]'); if(b) ask(b.dataset.q); });
+$('#askSend').addEventListener('click', ()=>{ const v = $('#askInput').value.trim(); $('#askInput').value=''; ask(v); });
+$('#askInput').addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); $('#askSend').click(); } });
+
+const depart = Date.now() + (5*3600+20*60)*1000;
+setInterval(()=>{ const s = Math.max(0, Math.round((depart-Date.now())/1000)); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), sec = s%60;
+  $('#countdown').innerHTML = `${h} hr ${m} min <span style="font-size:18px;opacity:.7">${String(sec).padStart(2,'0')}s</span>`; }, 1000);
+
+const startLabel = {lead:'9:58 AM', crew:'10:01 AM'};
+function fmtDur(ms){ const m = Math.floor(ms/60000); return Math.floor(m/60)+' hr '+String(m%60).padStart(2,'0')+' min'; }
+function punchAct(a){
+  const k = S.role==='crew'?'crew':'lead'; const p = S.punch[k];
+  if(a==='in'){ S.punch[k] = {st:'in', at:Date.now()}; toast('Clocked in at '+startLabel[k]+'. Sent to Paychex Flex.'); }
+  else if(a==='lunch'){ S.punch[k] = {st:'lunch', at:p.at}; toast('Lunch started. Sent to Paychex Flex.'); }
+  else if(a==='back'){ S.punch[k] = {st:'in', at:p.at}; toast('Back from lunch. Sent to Paychex Flex.'); }
+  else if(a==='out'){ S.punch[k] = {st:'done', at:p.at}; toast('Clocked out. Sent to Paychex Flex.'); }
+  render();
+}
+function renderPunch(){
+  [['lead','#punchLead'],['crew','#punchCrew']].forEach(([k,sel])=>{
+    const p = S.punch[k], el = $(sel); if(!el) return;
+    let html;
+    if(p.st==='out') html = `<span class="dot"></span><span class="txt"><b>Not clocked in</b><span>You're at Table Mountain</span></span><button class="pbtn" data-punch="in">Clock in</button>`;
+    else if(p.st==='in') html = `<span class="dot live"></span><span class="txt"><b>On the clock · ${startLabel[k]}</b><span><span data-elapsed="${p.at}">${fmtDur(Date.now()-p.at)}</span> · Paychex Flex ✓</span></span><button class="pbtn ghost" data-punch="lunch">Lunch</button><button class="pbtn ghost" data-punch="out">Out</button>`;
+    else if(p.st==='lunch') html = `<span class="dot lunch"></span><span class="txt"><b>On lunch</b><span>Paychex Flex ✓</span></span><button class="pbtn" data-punch="back">End lunch</button>`;
+    else html = `<span class="dot"></span><span class="txt"><b>Clocked out</b><span>Hours sent to Paychex Flex ✓</span></span>`;
+    el.innerHTML = html;
+  });
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-punch]'); if(b && phone.contains(b)) punchAct(b.dataset.punch); });
+setInterval(()=>{ $$('[data-elapsed]').forEach(el => el.textContent = fmtDur(Date.now() - +el.dataset.elapsed)); }, 15000);
+
+function setRole(r){ S.role = r; render(); go(['tasks','travel','ask','more','crew','eod'].includes(S.screen) ? S.screen : 'home'); }
+$('#asLead').addEventListener('click', ()=>setRole('lead'));
+$('#asCrew').addEventListener('click', ()=>setRole('crew'));
+$('#mLight').addEventListener('click', ()=>{ S.dark=false; render(); });
+$('#mDark').addEventListener('click', ()=>{ S.dark=true; render(); });
+
+let timers = [], step = -1, playing = false, auto;
+const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+function spot(sel){ $$('.spot').forEach(e=>e.classList.remove('spot')); if(sel){ const el = $(sel); if(el) el.classList.add('spot'); } }
+const steps = [
+  {t:'Tap the I-5 Install app', c:'It lives on every installer\'s iPhone, signed in with their @i5design.com Google account. Home is one card and four buttons. The card always shows the one thing to do right now, starting with Clock in.', run(){ S = fresh(); render(); go('home'); spot(null); showSpringboard(); later(()=>launchApp(()=>spot('#heroLead')), 1400); }},
+  {t:'Clock in without leaving the app', c:'Mike taps Clock in when he gets to the site. The punch goes straight to Paychex Flex in the background, with the site location attached. No second app.', run(){ S = fresh(); render(); go('home'); spot('#heroLead'); later(()=>punchAct('in'), 1600); }},
+  {t:'Mobilize, made personal', c:'The Daily SOP is built in. Mobilization is Mike\'s checklist: punch in (done by the clock), Vibe Board, 10-minute drawing review, clarify tasks, safety assessment in Procore, stage the Mobilize card items, set up carts and lift bins.', run(){ S.role='lead'; S.phase='mob'; render(); go('home'); spot('#heroLead'); later(()=>{ spot(null); go('routine'); }, 1400); ['vibe','draw','clarify','stage','setup'].forEach((k,i)=>later(()=>{ S.rt['Mike:'+k]=true; render(); }, 2000+i*380)); }},
+  {t:'Red means act now', c:'Lifting the D4 middle frame needs I-5\'s Decor Lift Plan Checklist, so the app asks for it before work starts. Mike taps Fill out and the form opens right here.', run(){ S.role='lead'; S.f={}; render(); go('home'); spot('#liftAlert'); later(()=>{ spot(null); liftForm(); }, 2200); }},
+  {t:'AI drafts the lift plan, Mike checks it', c:'AI fills in Leanne\'s lift plan from the drawing, the packing list, today\'s forklift inspection and the crew: weight, equipment, hazards, checkpoints, who signals and the exit plan. The inspection checks stay blank for Mike to do himself. He taps through them, signs and submits to Procore.', run(){ S.role='lead'; S.f={}; render(); openForm('lift'); spot(null); later(()=>spot('#formBody .aicard'), 1700); later(()=>{ spot(null); autoFill('lift', 150, ()=>{ spot('#submitForm'); submitForm(); }); }, 2300); }},
+  {t:'All 10 I-5 forms, one Safety button', c:'Safety holds every form template in I-5\'s Procore: safety assessment, sign-in sheets, forklift, scissor lift, hot work, trailer driving, weekly meeting and the borrower agreement. Long checklists get an All yes button.', run(){ S.role='lead'; render(); go('safety'); spot('#formGroups'); later(()=>{ spot(null); $('#row-fork').scrollIntoView({block:'center',behavior:'smooth'}); }, 2200); }},
+  {t:'AI drafts the safety assessment', c:'The form they fill out most (150 on TM) now writes itself. AI drafts the task, hazards, PPE and steps from today\'s Trello tasks, the lift plan and how the crew wrote past assessments. Mike reads it, adds a photo, checks the review box and submits.', run(){ S.role='lead'; render(); S.f.assess=null; openForm('assess'); spot(null);
+    later(()=>{ spot('#formBody .aicard'); }, 1700);
+    later(()=>{ const st=F('assess'); fieldsOf('assess').forEach(([id,f])=>{ if(f.t==='photo') st.a[id]=true; }); renderForm(); }, 3200);
+    later(()=>{ const st=F('assess'); fieldsOf('assess').forEach(([id,f])=>{ if(f.review) st.a[id]=true; }); st.sg[0]=true; renderForm(); $('#submitForm').scrollIntoView({block:'center',behavior:'smooth'}); }, 4000);
+    later(()=>{ spot('#submitForm'); submitForm(); }, 4800); }},
+  {t:'Every 2 hours, everyone checks in', c:'At 12:00 the whole crew gets a 2-hour check-in. Mike does his like everyone else: what got done, what\'s next. Trello updates itself, then his 2-hr update for Todd is waiting.', run(){ S.role='lead'; S.phase='work'; render(); go('home'); spot(null); later(()=>notify('Vibe Board check-in','TM · 10:00 – 12:00 · Tap to update Trello',()=>go('checkin')), 500); later(()=>{ $('#notif').classList.remove('show'); go('checkin'); }, 2000);
+    later(()=>{ const st=ciState(); ciTasks().forEach((i,n)=>{ st.a[i] = n===0 ? 'done' : 'going'; }); renderCheckin(); }, 3000); later(()=>{ spot('#ciSend'); sendCheckin(); }, 4300); }},
+  {t:'The update writes itself', c:'It\'s built from everyone\'s check-ins, in the same "TM 2 hour update" format Mike sends Todd today. One tap posts it to Production Engineers. No more "how\'s that going?"', run(){ S.role='lead'; render(); go('update'); spot('#sendUpd'); later(sendUpdate, 2200); }},
+  {t:'Heads down, no tapping all day', c:'Raul doesn\'t update anything while he works. His home screen shows what he\'s on and when the next check-in is. At 12:00 he taps Done or Still going, picks what\'s next, and Trello moves the cards.', run(){ S.role='crew'; S.eod=false; S.phase='work'; if(S.punch.crew.st==='out') S.punch.crew={st:'in',at:Date.now()}; render(); go('home'); spot('#crewHero'); later(()=>{ spot(null); notify('Vibe Board check-in','TM · 10:00 – 12:00 · Tap to update Trello',()=>go('checkin')); }, 1200); later(()=>{ $('#notif').classList.remove('show'); go('checkin'); }, 2400);
+    later(()=>{ const st=ciState(); ciTasks().forEach((i,n)=>{ st.a[i] = n===0 ? 'done' : 'going'; }); renderCheckin(); }, 3300); later(()=>{ spot('#ciSend'); sendCheckin(); }, 4500); }},
+  {t:'Pick what you\'re working on', c:'If Raul jumps over to help unload D1, he taps Change and picks the task. Everything else follows: the safety assessment drafts for D1, flags and Zoom calls attach D1, and Ask AI suggests D1 questions.', run(){ S.role='crew'; S.eod=false; render(); go('home'); spot('#pickCrew'); later(()=>{ spot(null); openPicker(); }, 1300); later(()=>{ const i = S.tasks.findIndex(t=>t.t==='Unload valance sections'); pickTask(i); }, 3000); later(()=>{ openForm('assess'); }, 4000); }},
+  {t:'"Can we zoom call?" in one tap', c:'Anyone can ask for a call. The message goes to Todd and Dan in Production Engineers with the site and drawing attached.', run(){ S.role='crew'; render(); go('home'); spot('#tZoomCrew'); later(zoomCall, 1800); }},
+  {t:'Ask AI before asking the shop', c:'The I-5 Decor Grok bot answers from the project sheets, the Shipping calendar and the drawings. If it can\'t, one tap sends the question to Todd and Dan.', run(){ go('ask'); spot('#chips'); later(()=>{ spot(null); ask('When is shipment 16?'); }, 1500); }},
+  {t:'Find and book flights right here', c:'Mike taps Find flights. Dates and airports come from the calendar. He picks the flight out and the flight home from in-policy options, and books. Because Match the crew is on, the other five are booked on the same flights automatically.', run(){ S.role='lead'; S.booked=false; S.shared=false; S.crewBooked={}; S.fs=null; render(); go('travel'); spot('#bookCard'); later(()=>{ spot(null); go('flights'); renderFlights(); }, 1000); later(()=>fsSearch(), 2000); later(()=>{ fs().out='o2'; fs().leg='back'; renderFlights(); }, 3500); later(()=>{ fs().back='b1'; renderFlights(); $('#fsBook').scrollIntoView({block:'center',behavior:'smooth'}); spot('#fsBook'); }, 4300); later(()=>{ spot(null); fsBook(); }, 5000); }},
+  {t:'The crew is matched automatically', c:'Raul doesn\'t search or book anything. He gets a notification that he\'s on Mike\'s flights, and they show up on his Travel page and schedule. No screenshots, no flight numbers to look up.', run(){ S.role='crew'; S.eod=false; S.booked=true; if(!S.shared){ matchCrew(); } render(); go('home'); later(()=>notify('You\'re booked on Mike\'s flights','Oct 19 out · Oct 23 home · Tap to see',()=>go('travel')), 500); later(()=>{ $('#notif').classList.remove('show'); go('travel'); spot('#bookCard'); }, 2200); }},
+  {t:'Travel days are covered', c:'On travel day: flight countdown, when to leave for the airport, the house reserved for him and who\'s driving the rental.', run(){ go('travel'); spot('#flightCard'); $('#flightCard').scrollIntoView({block:'center',behavior:'smooth'}); }},
+  {t:'The weeks ahead, at a glance', c:'The Schedule tile on Home opens each person\'s own next four weeks: jobs, travel days, shop days and approved time off, straight from the Decor Teams and Time Off calendars. Tap any day for details.', run(){ S.role='lead'; S.selDay=9; render(); go('home'); spot('#tSched'); later(()=>{ go('sched'); spot('#calGrid'); }, 1400); later(()=>{ S.selDay=20; renderSched(); }, 3400); }},
+  {t:'After 10 hours, plan tomorrow', c:'Mike\'s home screen stays focused on today all day. Once he hits 10 hours on the Paychex clock, the 2-hr update tile turns into Easy plan tomorrow and his phone nudges him.', run(){ S.role='lead'; S.punch.lead={st:'in', at:Date.now()-TEN-60000}; render(); go('home'); spot(null); later(()=>{ notify('10 hours on the clock','Tap to plan tomorrow for your crew',()=>go('plan')); spot('#tPlan'); }, 900); }},
+  {t:'The lead plans tomorrow', c:'One screen: start time, where to meet, order of work and his usual note, lift plan review before we lift anything. It goes to everyone\'s home screen after they wrap up.', run(){ S.role='lead'; if(!tenHrs()) S.punch.lead={st:'in', at:Date.now()-TEN-60000}; render(); go('plan'); spot('#postPlan'); later(postPlan, 2400); later(()=>{ spot(null); go('home'); spot('#tPlan'); }, 4200); }},
+  {t:'His own wrap-up list', c:'End of day follows the SOP: safe stopping point, one detail photo, tools, lifts, ladders, trash, Vibe Board, obvious walk, like tomorrow\'s message. AI drafts his EOD email in the SOP format from his check-ins. Send also clocks him out.', run(){ S.role='crew'; S.eod=false; S.phase='eod'; render(); go('home'); spot('#crewHero'); later(()=>{ spot(null); go('eod'); }, 1300); eodItems().forEach(([k],i)=>later(()=>{ S.rt['Raul:'+k]=true; render(); }, 2000+i*350)); later(()=>{ spot('#sendEod'); sendEod(); }, 2000+eodItems().length*350+500); }},
+  {t:'Light or dark', c:'The app follows the phone\'s setting. Same I-5 colors either way.', run(){ spot(null); S.dark = true; render(); }}
+];
+function dots(){ $('#dots').innerHTML = steps.map((_,i)=>`<span class="${i<=step?'on':''}"></span>`).join(''); }
+function show(i){
+  timers.forEach(clearTimeout); timers = [];
+  step = Math.max(0, Math.min(steps.length-1, i));
+  const s = steps[step];
+  $('#stepNo').textContent = 'STEP '+(step+1)+' OF '+steps.length;
+  $('#capTitle').textContent = s.t; $('#cap').textContent = s.c;
+  dots(); if(step>0){ $('#springboard').classList.add('gone'); $('#springboard').classList.remove('pulse'); } s.run();
+}
+function stopPlay(){ playing = false; clearInterval(auto); $('#playBtn').textContent = step>=steps.length-1 ? 'Play again' : 'Play walkthrough'; }
+$('#playBtn').addEventListener('click', ()=>{
+  if(playing){ stopPlay(); return; }
+  playing = true; $('#playBtn').textContent = 'Pause';
+  if(step < 0 || step >= steps.length-1) show(0); else show(step+1);
+  auto = setInterval(()=>{ if(step >= steps.length-1){ stopPlay(); return; } show(step+1); }, 6500);
+});
+$('#nextBtn').addEventListener('click', ()=>{ stopPlay(); show(step+1); });
+$('#backBtn').addEventListener('click', ()=>{ stopPlay(); show(step-1); });
+$('#resetBtn').addEventListener('click', ()=>{ stopPlay(); timers.forEach(clearTimeout); showSpringboard(); S = fresh(); step=-1; spot(null); render(); go('home'); dots();
+  $('#stepNo').textContent='WALKTHROUGH · '+steps.length+' STEPS'; $('#capTitle').textContent='A day at Table Mountain'; $('#cap').textContent='Play the walkthrough to see a lead and a crew member use the app through one day, from the morning lift plan to tomorrow\'s start time.'; $('#playBtn').textContent='Play walkthrough'; });
+phone.addEventListener('pointerdown', e => { if(e.isTrusted && playing) stopPlay(); });
+
+function fit(){ const narrow = innerWidth < 820; const h = narrow ? 9999 : innerHeight - 48; const s = Math.min(1, h/868, (innerWidth-32)/414); document.documentElement.style.setProperty('--s', s.toFixed(3)); }
+addEventListener('resize', fit); fit();
+
+render(); dots(); showSpringboard();
+})();
+</script>
