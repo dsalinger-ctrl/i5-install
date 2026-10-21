@@ -4,6 +4,7 @@ import { Eyebrow, Header, Screen, Tap } from '@/components/ui';
 import { Fonts } from '@/constants/theme';
 import { JOB, PEOPLE, type Role } from '@/data/sample';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/state/auth';
 import { useDay, type Stage } from '@/state/day';
 
 const STAGES: { stage: Stage; label: string }[] = [
@@ -16,6 +17,7 @@ const STAGES: { stage: Stage; label: string }[] = [
 export default function MoreScreen() {
   const t = useTheme();
   const day = useDay();
+  const auth = useAuth();
 
   return (
     <Screen>
@@ -27,6 +29,16 @@ export default function MoreScreen() {
           Packing list, Shipments, End of day, Crew board, Plan tomorrow, My day, My schedule, Request time off and
           Appearance.
         </Text>
+      </View>
+
+      <View style={[styles.card, { backgroundColor: t.surface }]}>
+        <Eyebrow>ACCOUNT</Eyebrow>
+        <Text style={[styles.body, { color: t.ink }]}>
+          {auth.me ? `Signed in as ${auth.me.email}` : 'Using sample data (not signed in)'}
+        </Text>
+        <Tap onPress={auth.signOut} accessibilityRole="button" style={[styles.reset, { backgroundColor: t.field }]}>
+          <Text style={[styles.resetText, { color: t.redInk }]}>Sign out</Text>
+        </Tap>
       </View>
 
       <View style={styles.groupH}>

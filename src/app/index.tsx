@@ -8,6 +8,7 @@ import { Eyebrow, Pill, Screen, Tap, Title, comingSoon, type Tone } from '@/comp
 import { Brand, Fonts, Radius } from '@/constants/theme';
 import { MOBILIZE, RED_ALERT, TASKS, type Task } from '@/data/sample';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/state/auth';
 import { useDay, type PunchAction } from '@/state/day';
 
 const PLAN_TOMORROW_AFTER_HOURS = 10;
@@ -15,6 +16,7 @@ const PLAN_TOMORROW_AFTER_HOURS = 10;
 export default function HomeScreen() {
   const t = useTheme();
   const day = useDay();
+  const { me } = useAuth();
   const now = useNow();
   const [sheet, setSheet] = useState<'clock' | 'tasks' | 'mobilize' | null>(null);
   const close = () => setSheet(null);
@@ -31,12 +33,12 @@ export default function HomeScreen() {
         <View style={{ flex: 1 }}>
           <Eyebrow>{formatDate(now)}</Eyebrow>
           <Title>
-            {greeting(now)}, {day.me.name}
+            {greeting(now)}, {me?.firstName ?? day.me.name}
           </Title>
           <ClockLine onPress={() => setSheet('clock')} />
         </View>
         <View style={[styles.avatar, { backgroundColor: t.surface, borderColor: t.line }]}>
-          <Text style={[styles.avatarText, { color: t.ink }]}>{day.me.initials}</Text>
+          <Text style={[styles.avatarText, { color: t.ink }]}>{me?.initials ?? day.me.initials}</Text>
         </View>
       </View>
 
